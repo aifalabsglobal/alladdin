@@ -7,6 +7,7 @@ import {
   type CandlePoint,
 } from "@/components/charts/CandleChart";
 import { FreshnessBadge } from "@/components/ui/FreshnessBadge";
+import { Preloader } from "@/components/ui/Preloader";
 import { cn } from "@/lib/utils";
 
 type ApiResponse = {
@@ -83,10 +84,9 @@ export function IntradayChartPanel({ symbol }: { symbol: string }) {
         />
       </div>
       {loading ? (
-        <div
-          className="h-72 animate-pulse rounded-xl bg-card-raised"
-          aria-label="Loading intraday chart"
-        />
+        <div className="flex h-72 animate-pulse items-center justify-center rounded-xl bg-card-raised">
+          <Preloader label="Loading intraday chart" className="py-0" />
+        </div>
       ) : data && data.candles.length > 0 ? (
         <>
           <CandleChart candles={data.candles} />

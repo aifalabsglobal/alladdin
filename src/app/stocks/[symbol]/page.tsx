@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -60,8 +61,16 @@ export default async function StockDetailPage({
       />
 
       <div className="sticky top-0 z-10 mb-6 grid gap-4 rounded-2xl bg-canvas/90 py-2 backdrop-blur lg:grid-cols-3">
-        <Card className="flex items-center justify-between gap-4">
-          <div>
+        <Card className="relative flex items-center justify-between gap-4 overflow-hidden">
+          <Image
+            src="/logo-transparent.png"
+            alt=""
+            aria-hidden
+            width={280}
+            height={280}
+            className="pointer-events-none absolute left-1/2 top-1/2 h-48 w-48 -translate-x-1/2 -translate-y-1/2 select-none object-contain opacity-30 brightness-150 saturate-150"
+          />
+          <div className="relative">
             <LiveStockSummary
               symbol={stock.symbol}
               eodClose={stock.close}
@@ -79,14 +88,16 @@ export default async function StockDetailPage({
               </p>
             ) : null}
           </div>
-          {stock.score !== null ? (
-            <ScoreDonut
-              score={stock.score}
-              label={`${stock.symbol} health score ${Math.round(stock.score)} out of 100`}
-            />
-          ) : (
-            <p className="text-sm text-muted">Score unavailable</p>
-          )}
+          <div className="relative">
+            {stock.score !== null ? (
+              <ScoreDonut
+                score={stock.score}
+                label={`${stock.symbol} health score ${Math.round(stock.score)} out of 100`}
+              />
+            ) : (
+              <p className="text-sm text-muted">Score unavailable</p>
+            )}
+          </div>
         </Card>
 
         <Card
