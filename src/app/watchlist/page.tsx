@@ -1,10 +1,10 @@
 import Link from "next/link";
 
+import { LivePriceCell } from "@/components/stocks/LivePriceCell";
 import { Card } from "@/components/ui/Card";
 import { HealthBadge } from "@/components/ui/HealthBadge";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SyntheticTag } from "@/components/ui/SyntheticTag";
-import { formatInr, formatPct } from "@/lib/format";
 import { getDemoWatchlist } from "@/lib/queries/watchlist";
 import { cn } from "@/lib/utils";
 
@@ -44,23 +44,13 @@ export default async function WatchlistPage() {
                 ) : null}
               </div>
               <div className="mt-4 flex items-end justify-between gap-3">
-                <div>
-                  <p className="text-xs text-muted">Last close</p>
-                  <p className="num text-lg font-semibold text-ink">
-                    {c.close === null ? "—" : formatInr(c.close)}
-                  </p>
-                </div>
+                <LivePriceCell
+                  symbol={c.symbol}
+                  eodClose={c.close}
+                  eodChangePct={c.changePct}
+                  compact
+                />
                 <div className="text-right">
-                  {c.changePct !== null ? (
-                    <p
-                      className={cn(
-                        "num text-sm font-medium",
-                        c.changePct >= 0 ? "text-positive" : "text-negative",
-                      )}
-                    >
-                      {formatPct(c.changePct)}
-                    </p>
-                  ) : null}
                   {c.scoreChange !== null ? (
                     <p
                       className={cn(

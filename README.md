@@ -1,10 +1,10 @@
 # Alladin
 
-Alladin is an explainable stock-health and short-term directional-outlook
-dashboard designed for Indian equity markets. It models NSE and BSE stocks,
-combines technical, fundamental, sentiment, institutional-flow, and
-macroeconomic signals into a 0–100 Health Score, and records the factors that
-contributed to each result.
+Alladin is a free-first global multi-asset research terminal with an HFT-style
+interface, explicit data provenance, calibrated-decision guardrails, and
+paper-risk tools. It covers a curated catalog of equities, ETFs, indices, FX,
+crypto, commodity proxies, and bond/rates proxies. India equity health remains
+a first-class market profile.
 
 > **Disclaimer:** Alladin is for informational and educational purposes only.
 > It does not provide investment advice, buy/sell/hold recommendations, or
@@ -12,30 +12,41 @@ contributed to each result.
 
 ## Project status
 
-This repository is currently a **Phase 1 foundation**, not a complete market
-dashboard.
+Alladdin now includes a complete enterprise-dashboard prototype with durable
+official NSE EOD history, an unofficial Yahoo browser stream for development,
+point-in-time health scoring, multi-horizon ensemble predictions, outcome
+tracking, guarded OpenAI explanations, and explicit data freshness/provenance.
+It also includes a canonical global instrument master, `/assets` catalog and
+asset workspaces, CoinGecko crypto observations, central-bank reference FX,
+provider budgets, global session states, after-cost abstention gates, and a
+paper position-risk simulator.
 
 Implemented:
 
-- Next.js application shell and landing page
-- PostgreSQL data model for market data, scoring, predictions, and watchlists
-- Deterministic synthetic data generator for 50 NSE stocks
-- Explainable weighted Health Score calculation
-- Health-band classification and unit tests
-- Environment validation and Prisma client setup
+- Enterprise dashboard, stock workspace, sector, influencer and watchlist views
+- Official NSE bhavcopy EOD backfill and deterministic health scoring
+- Yahoo Finance prototype WebSocket quotes with EOD/stale/unavailable fallback
+- Timestamped 15-minute/hourly bar storage and normalized candle API
+- M15, H1, EOD, D1, W1 and M1 directional probabilities and expected ranges
+- Realized-outcome labeling and model metrics (no seeded accuracy claims)
+- Evidence-bound OpenAI narratives with Zod validation, caching and token budget
+- Persistent provenance, quality and operational-health indicators
+- Stable asset IDs with venue, MIC, currency, timezone and provider mappings
+- Global asset search that disambiguates symbol, venue and asset class
+- Quota-aware CoinGecko and Frankfurter ingestion with `Degraded` states
+- Decision support that defaults to `Stand aside` on stale, uncalibrated,
+  conflicted, thin-sample, or non-positive after-cost outputs
 
-Planned but not yet implemented:
+Important limitations:
 
-- Dashboard, stock explorer, watchlist, and influencer pages
-- API route handlers
-- Live NSE/BSE or Yahoo Finance ingestion
-- OpenAI-powered news processing or explanations
-- Scheduled ingestion jobs
-- Clerk sign-in, user provisioning, and route protection
-- Trained ML prediction pipelines
-
-The navigation already contains links to planned pages, so those links currently
-return `404` responses.
+- Yahoo is an unofficial prototype source and is not licensed for centralized
+  public NSE/BSE redistribution. The UI labels it accordingly.
+- The current ensemble combines explainable rules with a shadow nonlinear model;
+  it is not represented as a production-trained trading model.
+- Authentication middleware and user-managed watchlists remain disabled until
+  valid Clerk credentials and product access rules are configured.
+- This is not true HFT. It has no colocation, licensed L2 feed, broker
+  connectivity, or live order execution. No AI can guarantee profitable trades.
 
 ## Product concept
 
@@ -82,9 +93,9 @@ The initial weights total `1.0`:
 | India VIX | Macro | Market | 0.05 |
 | USD/INR and crude | Macro | Market | 0.05 |
 
-The schema also supports directional predictions for one-day (`D1`), one-week
-(`W1`), and one-month (`M1`) horizons. These are directional signals with
-confidence values, not trading recommendations.
+The schema supports `M15`, `H1`, `EOD`, `D1`, `W1`, and `M1` directional
+outlooks with class probabilities, expected ranges, uncertainty and matured
+outcomes. These are educational model outputs, not trading recommendations.
 
 ## Technology stack
 
@@ -93,11 +104,11 @@ confidence values, not trading recommendations.
 - [TypeScript](https://www.typescriptlang.org/) in strict mode
 - [Tailwind CSS 4](https://tailwindcss.com/)
 - [Prisma 6](https://www.prisma.io/) and PostgreSQL
-- [Clerk](https://clerk.com/) for planned authentication
-- [OpenAI SDK](https://github.com/openai/openai-node) for planned AI workflows
-- [Yahoo Finance 2](https://github.com/gadicc/node-yahoo-finance2) for planned
-  market-data ingestion
-- [Recharts](https://recharts.org/) for planned visualizations
+- [Clerk](https://clerk.com/) for authentication (currently passthrough)
+- [OpenAI SDK](https://github.com/openai/openai-node) for guarded explanations
+- [Yahoo Finance 2](https://github.com/gadicc/node-yahoo-finance2) for prototype
+  quote/candle ingestion with official EOD fallback
+- [Recharts](https://recharts.org/) plus accessible SVG candlesticks
 - [Zod](https://zod.dev/) for runtime validation
 - [Vitest](https://vitest.dev/) for unit tests
 
@@ -107,8 +118,7 @@ confidence values, not trading recommendations.
 - npm
 - A PostgreSQL database (Neon or another PostgreSQL-compatible provider)
 
-The repository does not currently contain a dependency lockfile or committed
-Prisma migrations.
+The repository includes a dependency lockfile and additive Prisma migrations.
 
 ## Getting started
 
@@ -144,20 +154,19 @@ with `NEXT_PUBLIC_`.
 
 ### 3. Initialize the database
 
-Because no migration history is committed yet, the quickest local setup is:
+Apply the committed migration history:
 
 ```bash
-npm run db:push
+npx prisma migrate deploy
 ```
 
-To create an initial development migration instead:
+For local schema development:
 
 ```bash
 npm run db:migrate -- --name init
 ```
 
-Use migrations for shared or production databases once a migration history has
-been established.
+Do not use `db:push` against shared/production databases.
 
 ### 4. Load synthetic data
 
@@ -183,6 +192,11 @@ Open [http://localhost:3000](http://localhost:3000).
 | `DATABASE_URL` | Yes | PostgreSQL connection used by Prisma |
 | `OPENAI_API_KEY` | No | Server-only key reserved for AI workflows |
 | `OPENAI_DAILY_TOKEN_BUDGET` | No | Daily token budget; defaults to `500000` |
+| `COINGECKO_API_KEY` | No | Demo key for higher-reliability crypto aggregation |
+| `TWELVE_DATA_API_KEY` | No | Optional keyed prototype provider; honor plan display rights |
+| `ALPHA_VANTAGE_API_KEY` | No | Optional low-frequency research fallback |
+| `MARKET_BASE_CURRENCY` | No | Reporting base currency; defaults to `USD` |
+| `ENABLE_YAHOO_PROTOTYPE` | No | Enables unofficial Yahoo overlay; defaults to `true` |
 | `CRON_SECRET` | No | Reserved for protecting scheduled-job endpoints |
 | `CLERK_SECRET_KEY` | No | Clerk server credential |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | No | Clerk browser credential |
@@ -193,6 +207,46 @@ Open [http://localhost:3000](http://localhost:3000).
 Server variables are lazily validated with Zod in `src/lib/env.ts`.
 Authentication is not currently active: `src/middleware.ts` is a passthrough
 middleware even when Clerk keys are present.
+
+## Data truth and freshness
+
+- `Live` means a recent browser-delivered Yahoo prototype tick.
+- `Delayed` means connected or cached Yahoo data without a fresh tick.
+- `EOD` means the latest durable close, normally official NSE bhavcopy.
+- `Stale`, `Synthetic`, and `Unavailable` are never silently promoted to live.
+- `Degraded` means a provider budget, circuit, or capability restriction reduced
+  cadence; prediction panels abstain rather than treating it as live.
+- Every prediction is tied to a model version, point-in-time feature vector,
+  horizon, target timestamp and eventual realized outcome.
+
+Yahoo availability is not guaranteed. It can rate-limit or change without
+notice. A public production product requires a licensed redistribution feed.
+
+## Scheduled jobs
+
+Vercel Cron sends authenticated `GET` requests. Job routes also accept `POST`
+for manual operations:
+
+- `/api/jobs/ingest-eod` — official/delayed EOD adapters
+- `/api/jobs/score` — deterministic health-score pass
+- `/api/jobs/predict` — multi-horizon ensemble inference
+- `/api/jobs/label-outcomes` — mature outcomes and refresh model accuracy
+- `/api/jobs/ingest-intraday` — bounded Yahoo prototype candle ingestion
+- `/api/jobs/ingest-global` — quota-aware CoinGecko crypto and reference FX
+
+All job routes require `Authorization: Bearer <CRON_SECRET>` or the
+`x-cron-secret` header. Vercel Hobby cron timing is limited; frequent intraday
+server ingestion requires a paid scheduler or persistent worker. Browser live
+quotes remain independent of cron.
+
+## Prediction methodology
+
+The current active handler is an explainable ensemble. It uses only observations
+available at the prediction timestamp: returns, trend, RSI, volatility, volume,
+health score, market regime, institutional flow, sentiment and sector context.
+Feature completeness caps confidence, and insufficient data returns an explicit
+inconclusive state. OpenAI explains stored evidence; it does not generate the
+directional prediction.
 
 ## Database design
 

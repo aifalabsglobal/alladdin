@@ -3,27 +3,33 @@ import { notFound } from "next/navigation";
 
 import { PriceHealthChart } from "@/components/charts/PriceHealthChart";
 import { ScoreDonut } from "@/components/charts/ScoreDonut";
+import { ExplainPredictionButton } from "@/components/stocks/ExplainPredictionButton";
+import { IntradayChartPanel } from "@/components/stocks/IntradayChartPanel";
+import { LiveStockSummary } from "@/components/stocks/LiveStockSummary";
 import { Card } from "@/components/ui/Card";
+import { DataSourcePopover } from "@/components/ui/DataSourcePopover";
 import { DirectionChip } from "@/components/ui/DirectionChip";
 import { HealthBadge } from "@/components/ui/HealthBadge";
 import { ImpactBarList } from "@/components/ui/ImpactBarList";
+import { ModelTrustCard } from "@/components/ui/ModelTrustCard";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { ProbabilityBar } from "@/components/ui/ProbabilityBar";
 import { SentimentChip } from "@/components/ui/SentimentChip";
-import { SyntheticTag } from "@/components/ui/SyntheticTag";
 import {
   formatDate,
-  formatInr,
   formatMarketCap,
   formatPct,
   formatShortDate,
 } from "@/lib/format";
 import { getStockDetail } from "@/lib/queries/stocks";
 import { bandLabel } from "@/lib/scoring/bands";
-import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
 const HORIZON_LABEL: Record<string, string> = {
+  M15: "15 minutes",
+  H1: "1 hour",
+  EOD: "End of session",
   D1: "1 day",
   W1: "1 week",
   M1: "1 month",
@@ -44,28 +50,23 @@ export default async function StockDetailPage({
         title={`${stock.symbol} · ${stock.name}`}
         description={`${stock.exchange} · ${stock.sectorName}${stock.industry ? ` · ${stock.industry}` : ""} · Market cap ${formatMarketCap(stock.marketCap)}`}
         action={
-          <SyntheticTag label="Computed from real NSE data" asOf={stock.asOf ? formatDate(stock.asOf) : undefined} />
+          <DataSourcePopover
+            state="eod"
+            source="Official NSE bhavcopy + computed score"
+            observedAt={stock.asOf ? formatDate(stock.asOf) : undefined}
+            detail="Live price overlays use Yahoo's unofficial prototype stream and fall back to this EOD close."
+          />
         }
       />
 
-      {/* Hero */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="flex items-center justify-between gap-4 lg:col-span-1">
+      <div className="sticky top-0 z-10 mb-6 grid gap-4 rounded-2xl bg-canvas/90 py-2 backdrop-blur lg:grid-cols-3">
+        <Card className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-xs text-muted">Last close</p>
-            <p className="num mt-1 text-2xl font-semibold text-ink">
-              {stock.close === null ? "—" : formatInr(stock.close)}
-            </p>
-            {stock.changePct !== null ? (
-              <p
-                className={cn(
-                  "num mt-1 text-sm font-medium",
-                  stock.changePct >= 0 ? "text-positive" : "text-negative",
-                )}
-              >
-                {formatPct(stock.changePct)} today
-              </p>
-            ) : null}
+            <LiveStockSummary
+              symbol={stock.symbol}
+              eodClose={stock.close}
+              eodChangePct={stock.changePct}
+            />
             {stock.band ? (
               <p className="mt-3 text-xs text-muted">{bandLabel(stock.band)}</p>
             ) : null}
@@ -88,10 +89,9 @@ export default async function StockDetailPage({
           )}
         </Card>
 
-        {/* Why this score */}
         <Card
           title="Why this score?"
-          subtitle="Influencer contributions to today's health score — the numbers behind the signal"
+          subtitle="Point-in-time factor contributions with provenance"
           className="lg:col-span-2"
         >
           {stock.breakdown.length === 0 ? (
@@ -109,10 +109,17 @@ export default async function StockDetailPage({
         </Card>
       </div>
 
-      {/* Chart */}
       <Card
-        title="Price and health history"
-        subtitle="Simple line view — 90 trading days of synthetic history available"
+        title="Intraday analysis workspace"
+        subtitle="15-minute / hourly chart with explicit Yahoo prototype provenance and EOD fallback"
+        className="mt-6"
+      >
+        <IntradayChartPanel symbol={stock.symbol} />
+      </Card>
+
+      <Card
+        title="EOD price and health history"
+        subtitle="Durable official close history with computed health score"
         className="mt-6"
       >
         {stock.chart.length > 1 ? (
@@ -129,10 +136,10 @@ export default async function StockDetailPage({
       </Card>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        {/* Predictions */}
         <Card
-          title="Model outlook"
-          subtitle="Directional signals with model confidence — not investment advice"
+          title="Multi-horizon model outlook"
+          subtitle="Class probabilities, expected range, uncertainty and evidence — educational only"
+          className="lg:col-span-2"
         >
           {stock.predictions.length === 0 ? (
             <p className="text-sm text-muted">No predictions generated yet.</p>
@@ -140,7 +147,7 @@ export default async function StockDetailPage({
             <ul className="space-y-4">
               {stock.predictions.map((p) => (
                 <li
-                  key={p.horizon}
+                  key={p.id}
                   className="rounded-xl border border-line bg-card-raised/60 p-3"
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -149,19 +156,47 @@ export default async function StockDetailPage({
                     </p>
                     <DirectionChip direction={p.direction} confidence={p.confidence} />
                   </div>
+                  {p.probUp !== null &&
+                  p.probSideways !== null &&
+                  p.probDown !== null ? (
+                    <ProbabilityBar
+                      className="mt-3"
+                      up={p.probUp}
+                      sideways={p.probSideways}
+                      down={p.probDown}
+                    />
+                  ) : null}
+                  <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-muted">
+                    <span className="num">
+                      Expected{" "}
+                      {p.expectedReturn === null
+                        ? "—"
+                        : formatPct(p.expectedReturn * 100)}
+                    </span>
+                    <span className="num text-right">
+                      Range{" "}
+                      {p.returnLow === null || p.returnHigh === null
+                        ? "—"
+                        : `${formatPct(p.returnLow * 100)} to ${formatPct(p.returnHigh * 100)}`}
+                    </span>
+                  </div>
                   <p className="mt-2 text-xs text-muted">
                     Model {p.modelKey} v{p.modelVersion}
                     {p.accuracy !== null
-                      ? ` · seeded trailing accuracy ${Math.round(p.accuracy * 100)}% (synthetic)`
-                      : " · accuracy not yet measured"}
+                      ? ` · realized trailing accuracy ${Math.round(p.accuracy * 100)}% (${p.sampleCount ?? 0} outcomes)`
+                      : " · insufficient realized outcomes"}
+                    {p.insufficientData ? " · confidence capped: thin data" : ""}
                   </p>
+                  <ExplainPredictionButton
+                    predictionId={p.id}
+                    initial={p.explanation}
+                  />
                 </li>
               ))}
             </ul>
           )}
         </Card>
 
-        {/* Fundamentals */}
         <Card title="Fundamentals" subtitle="Latest snapshot vs sector median">
           {stock.fundamentals === null ? (
             <p className="text-sm text-muted">No fundamentals recorded.</p>
@@ -198,8 +233,7 @@ export default async function StockDetailPage({
           )}
         </Card>
 
-        {/* News */}
-        <Card title="Recent news" subtitle="With model-scored sentiment">
+        <Card title="Recent news" subtitle="With evidence-bound sentiment">
           {stock.news.length === 0 ? (
             <p className="text-sm text-muted">No news items yet.</p>
           ) : (
@@ -222,6 +256,30 @@ export default async function StockDetailPage({
           )}
         </Card>
       </div>
+
+      {stock.predictions[0] ? (
+        <ModelTrustCard
+          className="mt-6"
+          modelKey={stock.predictions[0].modelKey}
+          version={stock.predictions[0].modelVersion}
+          kind={stock.predictions[0].modelKind}
+          status={stock.predictions[0].modelStatus}
+          trainedAt={
+            stock.predictions[0].trainedAt
+              ? formatDate(stock.predictions[0].trainedAt)
+              : null
+          }
+          validationWindow="Walk-forward outcome tracking"
+          sampleCount={stock.predictions[0].sampleCount}
+          accuracy={stock.predictions[0].accuracy}
+          calibrated={stock.predictions[0].calibrated}
+          limitations={[
+            "Current ensemble includes an explainable rules model and a shadow nonlinear model, not a production-trained artifact.",
+            "Yahoo intraday data is unofficial and can be delayed, rate-limited, or unavailable.",
+            "Confidence is a class probability estimate, not a guarantee of correctness.",
+          ]}
+        />
+      ) : null}
 
       {/* Peers */}
       <Card

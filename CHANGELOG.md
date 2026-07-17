@@ -183,3 +183,128 @@ Awaiting confirmation before Phase 4 (scoring engine on real data).
 ### Stop point
 
 Awaiting confirmation before Phase 5 (OpenAI news sentiment, baseline predictions, and feature-store jobs).
+
+## Interim — Live ticker tape with intraday streaming (2026-07-17)
+
+### Created
+
+- `src/lib/queries/market.ts#getTickerTape` — indices (NIFTY 50, SENSEX, India VIX) plus active-stock closes with day-over-day change for the header tape
+- `src/app/api/ticker/route.ts` — no-store JSON endpoint used as EOD baseline and polling fallback
+- `src/components/TickerTape.tsx` — scrolling marquee mounted in `AppShell`; pauses on hover, links stocks to detail pages, respects reduced motion
+- `src/lib/live/yahooStream.ts` (+ tests) — dependency-free protobuf (yaticker) decoder and NSE/index symbol mapping for Yahoo Finance's public streaming WebSocket
+- `src/hooks/useLiveQuotes.ts` — browser WebSocket client with exponential-backoff reconnect and 1s-batched state updates
+- `scripts/smoke-yahoo-stream.ts` — Node smoke test for the stream + decoder
+
+### Behavior
+
+- During NSE market hours the tape overlays real-time intraday prices/percent changes from the stream (green dot, "Live"); connected but idle shows "Live·idle"; otherwise it falls back to latest EOD closes ("EOD") refreshed every 60s via `/api/ticker`.
+- No server-side socket infrastructure — the browser connects directly to Yahoo, so it deploys unchanged on Vercel.
+
+### Verification
+
+| Check | Result |
+|-------|--------|
+| `npm run typecheck` / `npm test` | Pass (37/37 tests incl. 4 new decoder/mapping tests) |
+| Stream smoke test | Connected, subscribed, decoded live ticks (BTC-USD after IST market close) |
+| `/api/ticker` | Returns indices + 24 stocks with change % |
+| `/dashboard` | 200 with tape mounted |
+
+## Phase 5 — Live AI enterprise dashboard prototype (2026-07-17)
+
+### Live data and provenance
+
+- Added shared `LiveMarketProvider` with deduplicated Yahoo subscriptions,
+  reconnect/backoff, market-session status, tick timestamps and stale detection.
+- Added explicit `Live`, `Delayed`, `EOD`, `Stale`, `Synthetic` and
+  `Unavailable` states across ticker, stock quotes and operational UI.
+- Added normalized 15-minute/hourly Yahoo candle API, timestamped
+  `IntradayBar` storage, idempotent upserts, bounded ingestion and retention.
+- Yahoo is labeled as an unofficial prototype source; official NSE EOD remains
+  the durable fallback.
+
+### Prediction and AI
+
+- Extended horizons to M15, H1, EOD, D1, W1 and M1.
+- Added leakage-safe feature builder, explainable rules handler, shadow
+  nonlinear handler and ensemble probabilities/ranges/uncertainty.
+- Added protected prediction and outcome-label jobs; accuracy is derived from
+  matured outcomes rather than seeded values.
+- Added structured OpenAI explanations with evidence-only prompts, Zod output
+  validation, advice-language rejection, cache and daily token-budget controls.
+- Added a deterministic local explanation fallback when OpenAI is unavailable.
+
+### Enterprise UX
+
+- Reworked dashboard hierarchy around market regime, freshness, service health,
+  high-confidence outlooks, sector heatmap and explainable drivers.
+- Upgraded stock details with sticky live context, true candlesticks and volume,
+  multi-horizon probability bars, expected range, model trust and AI evidence.
+- Added live overlays to stock/watchlist rows, global symbol search, skip link,
+  keyboard ticker pause, mobile escape handling, loading skeletons and chart
+  data tables.
+- Corrected Vercel cron routes to support authenticated `GET`.
+
+### Migration
+
+- `20260717122500_live_ai_enterprise` applied successfully to Neon.
+
+### Verification
+
+- Prisma schema formatted/client regenerated.
+- TypeScript strict check passed.
+- 54/54 unit tests passed, including freshness, candle normalization,
+  feature completeness, probability bounds and AI guardrails.
+- Prediction job wrote 300 computed records: 50 stocks × six horizons, with
+  normalized probability sums and confidence range 37.58%–98.73%.
+- Outcome job matured 196 historical D1 predictions and replaced seeded
+  accuracy metadata with realized-outcome metrics.
+- AI explanation smoke produced a schema-valid, advice-safe local fallback;
+  one cached explanation record was persisted.
+- Intraday ingestion failure drill attempted two symbols, recorded both Yahoo
+  failures, and preserved functional EOD fallback without breaking the UI.
+- `/dashboard`, `/stocks`, `/stocks/RELIANCE` and `/api/market/intraday` all
+  returned HTTP 200.
+- ESLint, strict typecheck and production Next.js build passed; all new API/job
+  routes compiled.
+
+## Phase 6 — Global multi-asset research foundation (2026-07-17)
+
+### Global identity and terminal
+
+- Added canonical `Instrument`, `Venue`, `ProviderInstrument`, `InstrumentQuote`,
+  `InstrumentBar`, and provider-budget models with additive Neon migrations.
+- Migrated existing NSE/BSE stocks through an optional compatibility link and
+  seeded a curated global equity, ETF, index, FX, crypto and proxy universe.
+- Added `/assets`, stable `/assets/[assetId]`, global autocomplete search,
+  currency-aware formatting, route loaders, provider cards, session state, and
+  a global dashboard quote strip.
+
+### Free-first providers and data truth
+
+- Added quota-aware CoinGecko crypto and Frankfurter central-bank reference FX
+  ingestion plus authenticated `/api/jobs/ingest-global`.
+- Added `Degraded` freshness semantics, hot/warm/cold coverage policy, provider
+  display-right metadata, daily budget accounting, and failure recording.
+- Yahoo remains an explicitly unofficial, removable prototype overlay.
+
+### AI decision safety and paper risk
+
+- Added a single decision-support gate for stale/delayed data, calibration,
+  sample size, completeness, ensemble disagreement, and after-cost expected
+  value. Unsafe outputs default to `Stand aside`.
+- Added Brier score and conformal interval primitives and a paper-only
+  risk-sizing simulator with loss budgets and fractional-Kelly caps.
+- Fixed M15/H1/EOD prediction features to consume intraday bars rather than
+  daily closes, added session-aware NSE target resolution, intraday outcome
+  labeling, and explanation cache invalidation.
+- Renamed the deterministic nonlinear shadow voice so it is never represented
+  as a trained GBM.
+
+### Verification
+
+- Both additive migrations deployed successfully to Neon.
+- Seed collision handling now preserves real observations with idempotent
+  `skipDuplicates`.
+- Global ingestion persisted 3 crypto and 4 reference-FX quotes.
+- `/assets`, canonical BTC detail, `/dashboard`, and asset search returned 200.
+- Strict typecheck, ESLint, 64/64 unit tests, and production build passed.

@@ -20,6 +20,10 @@ import {
   createRng,
   hashString,
 } from "./seed-data";
+import {
+  GLOBAL_INSTRUMENTS,
+  GLOBAL_VENUES,
+} from "./global-seed-data";
 
 const prisma = new PrismaClient();
 
@@ -142,6 +146,136 @@ async function seedStocks(sectorIds: Map<string, string>) {
   }
 
   return map;
+}
+
+async function seedGlobalUniverse() {
+  const venues = new Map<string, string>();
+
+  for (const venue of GLOBAL_VENUES) {
+    const saved = await prisma.venue.upsert({
+      where: { code: venue.code },
+      create: venue,
+      update: venue,
+    });
+    venues.set(venue.code, saved.id);
+  }
+
+  for (const item of GLOBAL_INSTRUMENTS) {
+    const venueId = venues.get(item.venueCode);
+    if (!venueId) throw new Error(`Missing venue ${item.venueCode}`);
+
+    const instrument = await prisma.instrument.upsert({
+      where: { venueId_symbol: { venueId, symbol: item.symbol } },
+      create: {
+        symbol: item.symbol,
+        name: item.name,
+        assetClass: item.assetClass,
+        venueId,
+        quoteCurrency: item.quoteCurrency,
+        baseCurrency: item.baseCurrency,
+        tier: item.tier,
+        isActive: true,
+      },
+      update: {
+        name: item.name,
+        assetClass: item.assetClass,
+        quoteCurrency: item.quoteCurrency,
+        baseCurrency: item.baseCurrency,
+        tier: item.tier,
+        isActive: true,
+      },
+    });
+
+    for (const mapping of item.providers) {
+      await prisma.providerInstrument.upsert({
+        where: {
+          provider_providerSymbol: {
+            provider: mapping.provider,
+            providerSymbol: mapping.symbol,
+          },
+        },
+        create: {
+          provider: mapping.provider,
+          providerSymbol: mapping.symbol,
+          instrumentId: instrument.id,
+          capabilities: mapping.capabilities,
+          displayAllowed: mapping.displayAllowed ?? false,
+        },
+        update: {
+          instrumentId: instrument.id,
+          capabilities: mapping.capabilities,
+          displayAllowed: mapping.displayAllowed ?? false,
+          enabled: true,
+        },
+      });
+    }
+  }
+
+  return venues;
+}
+
+async function linkIndianStocksToInstruments(venues: Map<string, string>) {
+  const stocks = await prisma.stock.findMany();
+
+  for (const stock of stocks) {
+    const venueId = venues.get(stock.exchange === "NSE" ? "XNSE" : "XBOM");
+    if (!venueId) throw new Error(`Missing venue for ${stock.exchange}`);
+
+    const instrument = await prisma.instrument.upsert({
+      where: { venueId_symbol: { venueId, symbol: stock.symbol } },
+      create: {
+        symbol: stock.symbol,
+        name: stock.name,
+        assetClass: "EQUITY",
+        venueId,
+        quoteCurrency: "INR",
+        tier: stock.exchange === "NSE" ? "WARM" : "COLD",
+        isActive: stock.isActive,
+        metadata: {
+          legacyStockId: stock.id,
+          marketCap: stock.marketCap,
+        },
+      },
+      update: {
+        name: stock.name,
+        quoteCurrency: "INR",
+        isActive: stock.isActive,
+        metadata: {
+          legacyStockId: stock.id,
+          marketCap: stock.marketCap,
+        },
+      },
+    });
+
+    await prisma.stock.update({
+      where: { id: stock.id },
+      data: { instrumentId: instrument.id },
+    });
+
+    const providerSymbol =
+      stock.exchange === "NSE" ? `${stock.symbol}.NS` : `${stock.symbol}.BO`;
+    await prisma.providerInstrument.upsert({
+      where: {
+        provider_providerSymbol: {
+          provider: "YAHOO_FINANCE",
+          providerSymbol,
+        },
+      },
+      create: {
+        provider: "YAHOO_FINANCE",
+        providerSymbol,
+        instrumentId: instrument.id,
+        capabilities: ["QUOTE", "INTRADAY", "EOD"],
+        displayAllowed: false,
+      },
+      update: {
+        instrumentId: instrument.id,
+        capabilities: ["QUOTE", "INTRADAY", "EOD"],
+        displayAllowed: false,
+        enabled: true,
+      },
+    });
+  }
 }
 
 async function seedMlModel() {
@@ -272,6 +406,8 @@ async function main() {
   await seedInfluencers();
   const sectorIds = await seedSectors();
   const stocks = await seedStocks(sectorIds);
+  const venues = await seedGlobalUniverse();
+  await linkIndianStocksToInstruments(venues);
   const mlModel = await seedMlModel();
   const influencers = await prisma.influencer.findMany();
   const influencerByKey = new Map(influencers.map((i) => [i.key, i]));
@@ -496,28 +632,28 @@ async function main() {
 
   console.log("Writing batches…");
   await createManyBatched("priceBars", priceRows, (chunk) =>
-    prisma.priceBar.createMany({ data: chunk }),
+    prisma.priceBar.createMany({ data: chunk, skipDuplicates: true }),
   );
   await createManyBatched("fundamentals", fundamentalRows, (chunk) =>
-    prisma.fundamental.createMany({ data: chunk }),
+    prisma.fundamental.createMany({ data: chunk, skipDuplicates: true }),
   );
   await createManyBatched("influencerReadings", readingRows, (chunk) =>
-    prisma.influencerReading.createMany({ data: chunk }),
+    prisma.influencerReading.createMany({ data: chunk, skipDuplicates: true }),
   );
   await createManyBatched("healthScores", healthRows, (chunk) =>
-    prisma.healthScore.createMany({ data: chunk }),
+    prisma.healthScore.createMany({ data: chunk, skipDuplicates: true }),
   );
   await createManyBatched("featureSnapshots", featureRows, (chunk) =>
-    prisma.featureSnapshot.createMany({ data: chunk }),
+    prisma.featureSnapshot.createMany({ data: chunk, skipDuplicates: true }),
   );
   await createManyBatched("predictions", predictionRows, (chunk) =>
-    prisma.prediction.createMany({ data: chunk }),
+    prisma.prediction.createMany({ data: chunk, skipDuplicates: true }),
   );
   await createManyBatched("newsItems", newsRows, (chunk) =>
-    prisma.newsItem.createMany({ data: chunk }),
+    prisma.newsItem.createMany({ data: chunk, skipDuplicates: true }),
   );
   await createManyBatched("marketSnapshots", marketRows, (chunk) =>
-    prisma.marketSnapshot.createMany({ data: chunk }),
+    prisma.marketSnapshot.createMany({ data: chunk, skipDuplicates: true }),
   );
 
   for (const [name, sectorId] of sectorIds) {
@@ -537,6 +673,8 @@ async function main() {
   const counts = {
     sectors: await prisma.sector.count(),
     stocks: await prisma.stock.count(),
+    instruments: await prisma.instrument.count(),
+    venues: await prisma.venue.count(),
     influencers: await prisma.influencer.count(),
     priceBars: await prisma.priceBar.count({ where: { dataSource: DataSource.SYNTHETIC } }),
     healthScores: await prisma.healthScore.count({

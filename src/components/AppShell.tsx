@@ -3,17 +3,27 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
+import { GlobalAssetSearch } from "@/components/assets/GlobalAssetSearch";
 import { Disclaimer } from "@/components/Disclaimer";
+import { LiveMarketProvider } from "@/components/live/LiveMarketProvider";
+import { TickerTape } from "@/components/TickerTape";
+import { MarketStatus } from "@/components/ui/MarketStatus";
 import { cn } from "@/lib/utils";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: "◧" },
-  { href: "/stocks", label: "Stocks", icon: "∿" },
-  { href: "/sectors", label: "Sectors", icon: "▦" },
+  { href: "/assets", label: "Assets", icon: "∿" },
+  { href: "/sectors", label: "Equity sectors", icon: "▦" },
   { href: "/watchlist", label: "Watchlist", icon: "☆" },
-  { href: "/influencers", label: "Influencers", icon: "⇄" },
+  { href: "/influencers", label: "Factors", icon: "⇄" },
 ];
 
 function Brand() {
@@ -33,7 +43,7 @@ function Brand() {
         <span className="block text-sm font-semibold tracking-tight text-ink">
           Alladin
         </span>
-        <span className="block text-[11px] text-muted">NSE/BSE Stock Health</span>
+        <span className="block text-[11px] text-muted">Global markets research</span>
       </span>
     </Link>
   );
@@ -73,50 +83,87 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuId = useId();
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    closeBtnRef.current?.focus();
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setMenuOpen(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row">
-      {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-line bg-surface px-4 py-5 md:flex">
-        <Brand />
-        <div className="mt-8 flex-1">
-          <NavLinks />
-        </div>
-        <p className="rounded-xl border border-line bg-card px-3 py-2 text-[11px] leading-relaxed text-muted">
-          Educational signals only. Never buy/sell advice.
-        </p>
-      </aside>
-
-      {/* Mobile top bar */}
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-surface/95 px-4 py-3 backdrop-blur md:hidden">
-        <Brand />
-        <button
-          type="button"
-          onClick={() => setMenuOpen((v) => !v)}
-          aria-expanded={menuOpen}
-          aria-controls="mobile-nav"
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
-          className="rounded-xl border border-line bg-card px-3 py-2 text-sm text-ink"
+    <LiveMarketProvider>
+      <div className="flex min-h-screen flex-col md:flex-row">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-positive focus:px-3 focus:py-2 focus:text-canvas"
         >
-          {menuOpen ? "✕" : "☰"}
-        </button>
-      </header>
+          Skip to content
+        </a>
 
-      {menuOpen ? (
-        <div
-          id="mobile-nav"
-          className="border-b border-line bg-surface px-4 py-4 md:hidden"
-        >
-          <NavLinks onNavigate={() => setMenuOpen(false)} />
+        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-line bg-surface px-4 py-5 md:flex">
+          <Brand />
+          <div className="mt-8 flex-1">
+            <NavLinks />
+          </div>
+          <p className="rounded-xl border border-line bg-card px-3 py-2 text-[11px] leading-relaxed text-muted">
+            Educational signals only. Never buy/sell advice. Yahoo stream is an
+            unofficial prototype feed.
+          </p>
+        </aside>
+
+        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-surface/95 px-4 py-3 backdrop-blur md:hidden">
+          <Brand />
+          <button
+            type="button"
+            ref={closeBtnRef}
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-expanded={menuOpen}
+            aria-controls={menuId}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            className="rounded-xl border border-line bg-card px-3 py-2 text-sm text-ink"
+          >
+            {menuOpen ? "✕" : "☰"}
+          </button>
+        </header>
+
+        {menuOpen ? (
+          <div
+            id={menuId}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation"
+            className="border-b border-line bg-surface px-4 py-4 md:hidden"
+          >
+            <NavLinks onNavigate={() => setMenuOpen(false)} />
+          </div>
+        ) : null}
+
+        <div className="flex min-w-0 flex-1 flex-col">
+          <TickerTape />
+          <div className="flex flex-wrap items-center gap-3 border-b border-line bg-surface/80 px-4 py-2 sm:px-6 lg:px-8">
+            <GlobalAssetSearch />
+            <MarketStatus />
+          </div>
+          <main
+            id="main-content"
+            className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 sm:px-6 lg:px-8"
+          >
+            {children}
+          </main>
+          <Disclaimer />
         </div>
-      ) : null}
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-6 sm:px-6 lg:px-8">
-          {children}
-        </main>
-        <Disclaimer />
       </div>
-    </div>
+    </LiveMarketProvider>
   );
 }

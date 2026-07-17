@@ -2,11 +2,12 @@ import type { HealthBand } from "@prisma/client";
 import Link from "next/link";
 
 import { Sparkline } from "@/components/charts/Sparkline";
+import { LivePriceCell } from "@/components/stocks/LivePriceCell";
 import { Card } from "@/components/ui/Card";
 import { HealthBadge } from "@/components/ui/HealthBadge";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SyntheticTag } from "@/components/ui/SyntheticTag";
-import { formatInr, formatPct } from "@/lib/format";
+import { formatPct } from "@/lib/format";
 import { getSectorSummaries } from "@/lib/queries/sectors";
 import { getStockList } from "@/lib/queries/stocks";
 import { cn } from "@/lib/utils";
@@ -138,8 +139,8 @@ export default async function StocksPage({
               <tr className="border-b border-line text-xs uppercase tracking-wide text-muted">
                 <th scope="col" className="py-2.5 pr-4 font-medium">Stock</th>
                 <th scope="col" className="py-2.5 pr-4 font-medium">Sector</th>
-                <th scope="col" className="py-2.5 pr-4 text-right font-medium">Price</th>
-                <th scope="col" className="py-2.5 pr-4 text-right font-medium">Day</th>
+                <th scope="col" className="py-2.5 pr-4 text-right font-medium">Price / source</th>
+                <th scope="col" className="py-2.5 pr-4 text-right font-medium">EOD day</th>
                 <th scope="col" className="py-2.5 pr-4 font-medium">Health</th>
                 <th scope="col" className="py-2.5 pr-4 font-medium">30-day trend</th>
                 <th scope="col" className="py-2.5 font-medium">Top influencer</th>
@@ -159,7 +160,11 @@ export default async function StocksPage({
                   </td>
                   <td className="py-3 pr-4 text-xs text-muted">{s.sectorName}</td>
                   <td className="num py-3 pr-4 text-right text-sm text-ink">
-                    {s.close === null ? "—" : formatInr(s.close)}
+                    <LivePriceCell
+                      symbol={s.symbol}
+                      eodClose={s.close}
+                      eodChangePct={s.changePct}
+                    />
                   </td>
                   <td
                     className={cn(

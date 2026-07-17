@@ -400,10 +400,20 @@ export async function runScoring(
           enrichedBreakdown.map((item) => [item.key, item.dataQuality]),
         );
         await tx.featureSnapshot.upsert({
-          where: { stockId_date: { stockId: stock.id, date: asOf } },
+          where: {
+            stockId_date_interval_featureSet: {
+              stockId: stock.id,
+              date: asOf,
+              interval: "D1",
+              featureSet: "v1",
+            },
+          },
           create: {
             stockId: stock.id,
             date: asOf,
+            asOf,
+            interval: "D1",
+            featureSet: "v1",
             features: {
               engineVersion: SCORING_ENGINE_VERSION,
               asOf: asOf.toISOString(),
@@ -415,6 +425,7 @@ export async function runScoring(
             },
           },
           update: {
+            asOf,
             features: {
               engineVersion: SCORING_ENGINE_VERSION,
               asOf: asOf.toISOString(),

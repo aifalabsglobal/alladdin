@@ -1,16 +1,48 @@
-const inr = new Intl.NumberFormat("en-IN", {
-  style: "currency",
-  currency: "INR",
-  maximumFractionDigits: 2,
-});
-
 const inrCompact = new Intl.NumberFormat("en-IN", {
   notation: "compact",
   maximumFractionDigits: 1,
 });
 
+export function formatMoney(
+  value: number,
+  currency: string,
+  locale = "en-US",
+  maximumFractionDigits = 2,
+): string {
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      maximumFractionDigits,
+    }).format(value);
+  } catch {
+    return `${currency} ${value.toFixed(maximumFractionDigits)}`;
+  }
+}
+
+export function formatCompactMoney(
+  value: number | null,
+  currency: string,
+  locale = "en-US",
+): string {
+  if (value === null) return "—";
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(value);
+  } catch {
+    return `${currency} ${value.toLocaleString(locale, {
+      notation: "compact",
+      maximumFractionDigits: 1,
+    })}`;
+  }
+}
+
 export function formatInr(value: number): string {
-  return inr.format(value);
+  return formatMoney(value, "INR", "en-IN");
 }
 
 export function formatMarketCap(value: number | null): string {

@@ -115,12 +115,34 @@ export async function getStockList(
 }
 
 export type StockPrediction = {
+  id: string;
   horizon: PredictionHorizon;
   direction: Direction;
   confidence: number;
+  probUp: number | null;
+  probSideways: number | null;
+  probDown: number | null;
+  expectedReturn: number | null;
+  returnLow: number | null;
+  returnHigh: number | null;
+  uncertainty: number | null;
+  insufficientData: boolean;
+  calibrated: boolean;
   modelKey: string;
   modelVersion: string;
+  modelKind: string;
+  modelStatus: string;
+  trainedAt: Date | null;
   accuracy: number | null;
+  sampleCount: number | null;
+  explanation: {
+    summary: string;
+    bullishDrivers: string[];
+    bearishDrivers: string[];
+    risks: string[];
+    caveats: string[];
+    model: string;
+  } | null;
 };
 
 export type StockNews = {
@@ -210,7 +232,7 @@ export async function getStockDetail(symbol: string): Promise<StockDetail | null
   const predictions = latestPredictionDate
     ? await prisma.prediction.findMany({
         where: { stockId: stock.id, date: latestPredictionDate.date },
-        include: { mlModel: true },
+        include: { mlModel: true, explanation: true },
         orderBy: { horizon: "asc" },
       })
     : [];
@@ -273,12 +295,36 @@ export async function getStockDetail(symbol: string): Promise<StockDetail | null
     predictions: predictions.map((p) => {
       const metrics = parseModelMetrics(p.mlModel.metrics);
       return {
+        id: p.id,
         horizon: p.horizon,
         direction: p.direction,
         confidence: p.confidence,
+        probUp: p.probUp,
+        probSideways: p.probSideways,
+        probDown: p.probDown,
+        expectedReturn: p.expectedReturn,
+        returnLow: p.returnLow,
+        returnHigh: p.returnHigh,
+        uncertainty: p.uncertainty,
+        insufficientData: p.insufficientData,
+        calibrated: p.calibrated,
         modelKey: p.mlModel.key,
         modelVersion: p.mlModel.version,
+        modelKind: p.mlModel.kind,
+        modelStatus: p.mlModel.status,
+        trainedAt: p.mlModel.trainedAt,
         accuracy: metrics?.accuracy?.[p.horizon] ?? null,
+        sampleCount: metrics?.samples?.[p.horizon] ?? null,
+        explanation: p.explanation
+          ? {
+              summary: p.explanation.summary,
+              bullishDrivers: p.explanation.bullishDrivers as string[],
+              bearishDrivers: p.explanation.bearishDrivers as string[],
+              risks: p.explanation.risks as string[],
+              caveats: p.explanation.caveats as string[],
+              model: p.explanation.model,
+            }
+          : null,
       };
     }),
     news: stock.newsItems.map((n) => ({

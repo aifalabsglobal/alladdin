@@ -44,6 +44,107 @@ export async function getMarketOverview(): Promise<MarketOverview | null> {
   };
 }
 
+export type TickerItem = {
+  key: string;
+  label: string;
+  href: string | null;
+  value: number;
+  changePct: number | null;
+  kind: "index" | "stock";
+};
+
+export type TickerTape = {
+  asOf: Date | null;
+  items: TickerItem[];
+};
+
+/**
+ * Compact price tape for the persistent header: market indices first, then the
+ * most active stocks by latest close. Values are the latest available EOD close
+ * with day-over-day change; the header polls this so it refreshes automatically.
+ */
+export async function getTickerTape(stockLimit = 24): Promise<TickerTape> {
+  const [snapshot, stocks] = await Promise.all([
+    prisma.marketSnapshot.findMany({
+      orderBy: { date: "desc" },
+      take: 2,
+      select: {
+        date: true,
+        niftyClose: true,
+        sensexClose: true,
+        indiaVix: true,
+      },
+    }),
+    prisma.stock.findMany({
+      where: { isActive: true },
+      select: {
+        symbol: true,
+        priceBars: {
+          orderBy: { date: "desc" },
+          take: 2,
+          select: { close: true, date: true },
+        },
+      },
+      orderBy: { symbol: "asc" },
+    }),
+  ]);
+
+  const latest = snapshot[0];
+  const prev = snapshot[1];
+  const items: TickerItem[] = [];
+
+  if (latest) {
+    items.push({
+      key: "NIFTY50",
+      label: "NIFTY 50",
+      href: null,
+      value: latest.niftyClose,
+      changePct: prev ? dayChangePct(latest.niftyClose, prev.niftyClose) : null,
+      kind: "index",
+    });
+    items.push({
+      key: "SENSEX",
+      label: "SENSEX",
+      href: null,
+      value: latest.sensexClose,
+      changePct: prev
+        ? dayChangePct(latest.sensexClose, prev.sensexClose)
+        : null,
+      kind: "index",
+    });
+    items.push({
+      key: "INDIAVIX",
+      label: "INDIA VIX",
+      href: null,
+      value: latest.indiaVix,
+      changePct: prev ? dayChangePct(latest.indiaVix, prev.indiaVix) : null,
+      kind: "index",
+    });
+  }
+
+  const stockItems = stocks
+    .map((s): TickerItem | null => {
+      const latestBar = s.priceBars[0];
+      if (!latestBar) return null;
+      const prevBar = s.priceBars[1];
+      return {
+        key: s.symbol,
+        label: s.symbol,
+        href: `/stocks/${s.symbol}`,
+        value: latestBar.close,
+        changePct: prevBar ? dayChangePct(latestBar.close, prevBar.close) : null,
+        kind: "stock" as const,
+      };
+    })
+    .filter((i): i is TickerItem => i !== null)
+    .slice(0, stockLimit);
+
+  return {
+    asOf: latest?.date ?? stocks[0]?.priceBars[0]?.date ?? null,
+    items: [...items, ...stockItems],
+  };
+}
+
 export type MarketSparklines = {
   nifty: number[];
   sensex: number[];

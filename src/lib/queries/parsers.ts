@@ -25,14 +25,11 @@ export function parseBreakdown(json: unknown): BreakdownItem[] {
 }
 
 export const modelMetricsSchema = z.object({
-  accuracy: z
-    .object({
-      D1: z.number().optional(),
-      W1: z.number().optional(),
-      M1: z.number().optional(),
-    })
-    .optional(),
+  accuracy: z.record(z.string(), z.number()).optional(),
+  samples: z.record(z.string(), z.number()).optional(),
   note: z.string().optional(),
+  source: z.string().optional(),
+  updatedAt: z.string().optional(),
 });
 
 export type ModelMetrics = z.infer<typeof modelMetricsSchema>;

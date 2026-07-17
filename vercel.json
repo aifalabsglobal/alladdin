@@ -7,6 +7,22 @@
     {
       "path": "/api/jobs/score",
       "schedule": "45 12 * * 1-5"
+    },
+    {
+      "path": "/api/jobs/predict",
+      "schedule": "0 13 * * 1-5"
+    },
+    {
+      "path": "/api/jobs/label-outcomes",
+      "schedule": "15 13 * * 1-5"
+    },
+    {
+      "path": "/api/jobs/ingest-intraday",
+      "schedule": "0 4 * * 1-5"
+    },
+    {
+      "path": "/api/jobs/ingest-global",
+      "schedule": "15 */4 * * *"
     }
   ]
 }

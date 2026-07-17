@@ -13,20 +13,26 @@ const bodySchema = z
   })
   .optional();
 
-export async function POST(request: Request) {
+async function handle(request: Request) {
   if (!isAuthorizedCronRequest(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   let adapters: string[] | undefined;
-  try {
-    const text = await request.text();
-    if (text) {
-      const parsed = bodySchema.parse(JSON.parse(text));
-      adapters = parsed?.adapters;
+  const url = new URL(request.url);
+  const adaptersParam = url.searchParams.get("adapters");
+  if (adaptersParam) {
+    adapters = adaptersParam.split(",").filter(Boolean);
+  } else if (request.method === "POST") {
+    try {
+      const text = await request.text();
+      if (text) {
+        const parsed = bodySchema.parse(JSON.parse(text));
+        adapters = parsed?.adapters;
+      }
+    } catch {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
     }
-  } catch {
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
   const startedAt = new Date().toISOString();
@@ -42,4 +48,12 @@ export async function POST(request: Request) {
     },
     { status: allFailed ? 502 : 200 },
   );
+}
+
+export async function GET(request: Request) {
+  return handle(request);
+}
+
+export async function POST(request: Request) {
+  return handle(request);
 }
