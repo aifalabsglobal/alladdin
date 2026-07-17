@@ -4,9 +4,10 @@ import { ingestAlphaVantageQuotes } from "@/lib/market/providers/alphaVantage";
 import { ingestCoinGeckoQuotes } from "@/lib/market/providers/coinGecko";
 import { ingestReferenceFxQuotes } from "@/lib/market/providers/frankfurter";
 import { ingestTwelveDataQuotes } from "@/lib/market/providers/twelveData";
+import { ingestGlobalYahooBars } from "@/lib/market/providers/yahooBars";
 
 type ProviderResult =
-  | { status: "ok"; result: { attempted: number; upserted: number; skipped?: string } }
+  | { status: "ok"; result: { attempted: number; upserted: number; skipped?: string; failures?: number } }
   | { status: "failed"; error: string };
 
 const PROVIDERS = [
@@ -14,6 +15,7 @@ const PROVIDERS = [
   { key: "fx", run: ingestReferenceFxQuotes },
   { key: "twelveData", run: ingestTwelveDataQuotes },
   { key: "alphaVantage", run: ingestAlphaVantageQuotes },
+  { key: "yahooBars", run: () => ingestGlobalYahooBars({ lookbackDays: 90, instrumentLimit: 24 }) },
 ] as const;
 
 export type GlobalIngestionSummary = {

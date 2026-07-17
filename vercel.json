@@ -31,6 +31,14 @@
     {
       "path": "/api/jobs/ingest-global",
       "schedule": "15 */4 * * *"
+    },
+    {
+      "path": "/api/jobs/ingest-global-bars",
+      "schedule": "45 */6 * * *"
+    },
+    {
+      "path": "/api/jobs/fit-calibration",
+      "schedule": "0 14 * * 1-5"
     }
   ]
 }

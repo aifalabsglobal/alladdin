@@ -23,3 +23,14 @@ export async function getCurrentUserId(): Promise<string | null> {
     return null;
   }
 }
+
+export async function requireUserId(): Promise<
+  { ok: true; userId: string } | { ok: false; error: string }
+> {
+  if (!isClerkEnabled()) {
+    return { ok: false, error: "Authentication is not configured" };
+  }
+  const userId = await getCurrentUserId();
+  if (!userId) return { ok: false, error: "Sign in required" };
+  return { ok: true, userId };
+}

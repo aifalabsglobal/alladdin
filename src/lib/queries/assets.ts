@@ -4,6 +4,7 @@ import type { AssetClass, InstrumentTier, Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
 import { dayChangePct } from "@/lib/format";
+import { filterDisplayableQuotes } from "@/lib/market/entitlements";
 
 export type AssetListFilters = {
   query?: string;
@@ -124,7 +125,7 @@ export async function getAssetList(filters: AssetListFilters = {}) {
 }
 
 export async function getAssetDetail(id: string) {
-  return prisma.instrument.findUnique({
+  const asset = await prisma.instrument.findUnique({
     where: { id },
     include: {
       venue: true,
@@ -157,6 +158,19 @@ export async function getAssetDetail(id: string) {
       },
     },
   });
+  if (!asset) return null;
+
+  const displayQuotes = filterDisplayableQuotes(
+    asset.quotes,
+    asset.providerMappings,
+  );
+  // Prefer entitled quotes; if none entitled, withhold price (show bars/EOD only).
+  return {
+    ...asset,
+    quotes: displayQuotes,
+    providerMappings: asset.providerMappings,
+    withheldQuoteCount: asset.quotes.length - displayQuotes.length,
+  };
 }
 
 export async function searchAssets(query: string, limit = 8) {

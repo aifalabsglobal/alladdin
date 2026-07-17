@@ -1,5 +1,43 @@
 # Changelog
 
+## Phase 8 — No-compromise A–F foundation (2026-07-17)
+
+### A — Data truth
+- Yahoo `InstrumentBar` D1 ingestion for HOT/WARM mapped instruments (`yahooBars.ts`)
+  wired into global ingest + dedicated `/api/jobs/ingest-global-bars` with job locks.
+- Entitlement filtering: asset detail withholds quotes whose provider mapping is
+  not `displayAllowed`.
+
+### B — Prediction integrity
+- `originBucket` unique key on equity + instrument predictions so same-day M15/H1
+  runs no longer overwrite each other.
+- Isotonic-bin calibration artifacts (`CalibrationArtifact`) with chronological
+  fit job `/api/jobs/fit-calibration`; ensemble applies calibration when fitted.
+- Logistic shadow training switched to chronological 70/30 walk-forward.
+
+### C — Ops
+- GitHub Actions CI (typecheck, lint, test, build).
+- `/api/health`, Postgres `JobLock`, security headers + CSP in `next.config.ts`.
+
+### D — Tenant surfaces
+- `requireUserId` on watchlist/paper mutations; Alert center with persisted
+  `AlertEvent` rows; watchlist items can reference instruments.
+
+### E — Paper platform
+- `PaperAccount` / `PaperOrder` / `PaperFill` / `PaperPosition` with market-fill
+  simulator and `/paper` UI.
+
+### F — Terminal UX
+- Ctrl/Cmd+K command palette; Methodology + Legal pages; nav for Paper/Alerts;
+  global metadata updated beyond NSE/BSE-only wording.
+
+### Still gated / not claimed as complete
+- Licensed L2 feeds, broker execution, true HFT colocation, org multi-tenancy,
+  email/push delivery, and advanced chart workspaces remain next.
+
+### Verification
+- Typecheck, ESLint, 71/71 tests, production build.
+
 ## Phase 7 — Global predictions, calibration, trained shadow, providers & auth (2026-07-17)
 
 ### Global instrument predictions

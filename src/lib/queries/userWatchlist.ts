@@ -30,27 +30,31 @@ export async function getUserWatchlist(userId: string): Promise<WatchlistCard[]>
     orderBy: { createdAt: "desc" },
   });
 
-  return items.map((item) => {
-    const s = item.stock;
-    const latestBar = s.priceBars[0];
-    const prevBar = s.priceBars[1];
-    const latestScore = s.healthScores[0];
-    const prevScore = s.healthScores[1];
-    return {
-      symbol: s.symbol,
-      name: s.name,
-      sectorName: s.sector.name,
-      close: latestBar?.close ?? null,
-      changePct:
-        latestBar && prevBar
-          ? dayChangePct(latestBar.close, prevBar.close)
-          : null,
-      score: latestScore?.score ?? null,
-      band: latestScore?.band ?? null,
-      scoreChange:
-        latestScore && prevScore ? latestScore.score - prevScore.score : null,
-    };
-  });
+  return items
+    .filter((item): item is typeof item & { stock: NonNullable<typeof item.stock> } =>
+      Boolean(item.stock),
+    )
+    .map((item) => {
+      const s = item.stock;
+      const latestBar = s.priceBars[0];
+      const prevBar = s.priceBars[1];
+      const latestScore = s.healthScores[0];
+      const prevScore = s.healthScores[1];
+      return {
+        symbol: s.symbol,
+        name: s.name,
+        sectorName: s.sector.name,
+        close: latestBar?.close ?? null,
+        changePct:
+          latestBar && prevBar
+            ? dayChangePct(latestBar.close, prevBar.close)
+            : null,
+        score: latestScore?.score ?? null,
+        band: latestScore?.band ?? null,
+        scoreChange:
+          latestScore && prevScore ? latestScore.score - prevScore.score : null,
+      };
+    });
 }
 
 export async function addStockToWatchlist(userId: string, symbol: string) {

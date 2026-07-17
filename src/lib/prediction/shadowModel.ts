@@ -39,24 +39,6 @@ export type ShadowTrainingSummary = {
   note?: string;
 };
 
-/** Deterministic Fisher–Yates using a mulberry32 PRNG so runs are repeatable. */
-function seededShuffle<T>(items: T[], seed = 42): T[] {
-  const arr = [...items];
-  let state = seed >>> 0;
-  const rand = () => {
-    state |= 0;
-    state = (state + 0x6d2b79f5) | 0;
-    let t = Math.imul(state ^ (state >>> 15), 1 | state);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-  for (let i = arr.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(rand() * (i + 1));
-    [arr[i], arr[j]] = [arr[j]!, arr[i]!];
-  }
-  return arr;
-}
-
 function extractRow(features: unknown): number[] | null {
   if (!features || typeof features !== "object" || Array.isArray(features)) {
     return null;
@@ -143,7 +125,8 @@ export async function trainAndEvaluateShadow(): Promise<ShadowTrainingSummary> {
     return summary;
   }
 
-  const indices = seededShuffle([...Array(total).keys()]);
+  const indices = [...Array(total).keys()];
+  // Chronological walk-forward: train on earliest 70%, test on latest 30%.
   const cut = Math.floor(total * 0.7);
   const trainIdx = indices.slice(0, cut);
   const testIdx = indices.slice(cut);

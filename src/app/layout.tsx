@@ -18,9 +18,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Alladin — NSE/BSE Stock Health & Prediction Dashboard",
+  title: "Alladin — Global markets research terminal",
   description:
-    "Plain-language stock health scores, influencer breakdowns, and short-term directional outlooks for NSE/BSE equities.",
+    "Multi-asset observations, explainable health scores, calibrated directional research, and paper risk tools. Educational only — not investment advice.",
 };
 
 export default function RootLayout({

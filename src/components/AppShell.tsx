@@ -13,6 +13,7 @@ import {
 
 import { GlobalAssetSearch } from "@/components/assets/GlobalAssetSearch";
 import { AuthControls } from "@/components/AuthControls";
+import { CommandPalette } from "@/components/CommandPalette";
 import { Disclaimer } from "@/components/Disclaimer";
 import { LiveMarketProvider } from "@/components/live/LiveMarketProvider";
 import { TickerTape } from "@/components/TickerTape";
@@ -24,8 +25,11 @@ const nav = [
   { href: "/assets", label: "Assets", icon: "∿" },
   { href: "/sectors", label: "Equity sectors", icon: "▦" },
   { href: "/watchlist", label: "Watchlist", icon: "☆" },
+  { href: "/paper", label: "Paper", icon: "▣" },
+  { href: "/alerts", label: "Alerts", icon: "!" },
   { href: "/influencers", label: "Factors", icon: "⇄" },
   { href: "/calibration", label: "Model trust", icon: "◎" },
+  { href: "/methodology", label: "Methodology", icon: "?" },
 ];
 
 function Brand() {
@@ -111,6 +115,7 @@ export function AppShell({
 
   return (
     <LiveMarketProvider>
+      <CommandPalette />
       <div className="flex min-h-screen flex-col md:flex-row">
         <a
           href="#main-content"

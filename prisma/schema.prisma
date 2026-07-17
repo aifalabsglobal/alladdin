@@ -169,6 +169,7 @@ model Instrument {
   bars             InstrumentBar[]
   quotes           InstrumentQuote[]
   predictions      InstrumentPrediction[]
+  watchlistItems   WatchlistItem[]
 
   @@unique([venueId, symbol])
   @@index([assetClass, tier])
@@ -489,6 +490,8 @@ model Prediction {
   id               String            @id @default(cuid())
   stockId          String
   date             DateTime          @db.Date
+  /// Forecast-origin bucket so same-day M15/H1 runs do not overwrite each other.
+  originBucket     DateTime          @default(now())
   asOf             DateTime          @default(now())
   targetAt         DateTime?
   horizon          PredictionHorizon
@@ -516,10 +519,11 @@ model Prediction {
   mlModel     MlModel                @relation(fields: [mlModelId], references: [id], onDelete: Cascade)
   explanation PredictionExplanation?
 
-  @@unique([stockId, date, horizon, mlModelId])
+  @@unique([stockId, originBucket, horizon, mlModelId])
   @@index([stockId])
   @@index([date])
   @@index([asOf])
+  @@index([originBucket])
   @@index([mlModelId])
   @@index([horizon])
   @@index([runId])
@@ -529,6 +533,7 @@ model InstrumentPrediction {
   id               String            @id @default(cuid())
   instrumentId     String
   date             DateTime          @db.Date
+  originBucket     DateTime          @default(now())
   asOf             DateTime          @default(now())
   targetAt         DateTime?
   horizon          PredictionHorizon
@@ -555,10 +560,11 @@ model InstrumentPrediction {
   instrument Instrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
   mlModel    MlModel    @relation(fields: [mlModelId], references: [id], onDelete: Cascade)
 
-  @@unique([instrumentId, date, horizon, mlModelId])
+  @@unique([instrumentId, originBucket, horizon, mlModelId])
   @@index([instrumentId])
   @@index([date])
   @@index([asOf])
+  @@index([originBucket])
   @@index([mlModelId])
   @@index([horizon])
   @@index([runId])
@@ -624,18 +630,24 @@ model Watchlist {
 }
 
 model WatchlistItem {
-  id          String   @id @default(cuid())
-  watchlistId String
-  stockId     String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  watchlistId  String
+  stockId      String?
+  instrumentId String?
+  note         String?
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  watchlist Watchlist @relation(fields: [watchlistId], references: [id], onDelete: Cascade)
-  stock     Stock     @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  watchlist  Watchlist   @relation(fields: [watchlistId], references: [id], onDelete: Cascade)
+  stock      Stock?      @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  instrument Instrument? @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
 
   @@unique([watchlistId, stockId])
+  @@unique([watchlistId, instrumentId])
   @@index([watchlistId])
   @@index([stockId])
+  @@index([instrumentId])
 }
 
 model NewsItem {
@@ -724,4 +736,135 @@ model UserColumnPreference {
 
   @@unique([userId, pageKey])
   @@index([userId])
+}
+
+model JobLock {
+  id         String   @id @default(cuid())
+  key        String   @unique
+  owner      String
+  acquiredAt DateTime @default(now())
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([expiresAt])
+}
+
+model AlertEvent {
+  id             String    @id @default(cuid())
+  userId         String?
+  severity       String
+  category       String
+  title          String
+  detail         String
+  sourceKey      String    @unique
+  acknowledged   Boolean   @default(false)
+  acknowledgedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([userId, acknowledged, createdAt])
+  @@index([category])
+  @@index([createdAt])
+}
+
+enum PaperOrderSide {
+  BUY
+  SELL
+}
+
+enum PaperOrderStatus {
+  PENDING
+  FILLED
+  CANCELLED
+  REJECTED
+}
+
+model PaperAccount {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  currency  String   @default("USD")
+  cash      Float    @default(100000)
+  equity    Float    @default(100000)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders    PaperOrder[]
+  positions PaperPosition[]
+  fills     PaperFill[]
+}
+
+model PaperOrder {
+  id           String           @id @default(cuid())
+  accountId    String
+  instrumentId String?
+  stockId      String?
+  symbol       String
+  side         PaperOrderSide
+  quantity     Float
+  limitPrice   Float?
+  status       PaperOrderStatus @default(PENDING)
+  reason       String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  account PaperAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  fills   PaperFill[]
+
+  @@index([accountId, createdAt])
+  @@index([status])
+}
+
+model PaperFill {
+  id        String   @id @default(cuid())
+  accountId String
+  orderId   String
+  price     Float
+  quantity  Float
+  fee       Float    @default(0)
+  filledAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  account PaperAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  order   PaperOrder   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, filledAt])
+  @@index([orderId])
+}
+
+model PaperPosition {
+  id           String   @id @default(cuid())
+  accountId    String
+  instrumentId String?
+  stockId      String?
+  symbol       String
+  quantity     Float
+  avgCost      Float
+  marketValue  Float    @default(0)
+  unrealizedPnL Float   @default(0)
+  updatedAt    DateTime @updatedAt
+  createdAt    DateTime @default(now())
+
+  account PaperAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, symbol])
+  @@index([accountId])
+}
+
+model CalibrationArtifact {
+  id        String   @id @default(cuid())
+  modelKey  String
+  horizon   PredictionHorizon
+  method    String
+  /// Sorted bins: [{x: predicted, y: empirical}]
+  mapping   Json
+  samples   Int
+  ece       Float?
+  trainedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([modelKey, horizon, method])
+  @@index([modelKey])
 }

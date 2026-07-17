@@ -10,9 +10,15 @@ import {
 import { randomUUID } from "crypto";
 
 import { prisma } from "@/lib/db";
+import {
+  applyCalibration,
+  loadCalibrationMap,
+} from "@/lib/prediction/calibration";
 import { getActiveHandler } from "@/lib/prediction/ensemble";
 import { buildPredictionFeatures } from "@/lib/prediction/features";
+import { originBucketFor } from "@/lib/prediction/originBucket";
 import { HORIZON_MS } from "@/lib/prediction/types";
+import { parseModelMetrics } from "@/lib/queries/parsers";
 
 /**
  * Horizons the global (instrument) engine serves. Short intraday horizons are
@@ -95,6 +101,16 @@ export async function runInstrumentPredictions(args?: {
     take: args?.instrumentLimit,
   });
 
+  const calibrationByHorizon = new Map(
+    await Promise.all(
+      horizons.map(async (horizon) => {
+        const mapping = await loadCalibrationMap(handler.key, horizon);
+        return [horizon, mapping] as const;
+      }),
+    ),
+  );
+  const modelMetrics = parseModelMetrics(model.metrics);
+
   let instrumentsScored = 0;
   let predictionsUpserted = 0;
   let insufficientData = 0;
@@ -137,12 +153,19 @@ export async function runInstrumentPredictions(args?: {
 
       if (pred.insufficientData) insufficientData += 1;
       const targetAt = new Date(asOf.getTime() + HORIZON_MS[horizon]);
+      const originBucket = originBucketFor(horizon, asOf);
+      const sampleAccuracy = modelMetrics?.accuracy?.[horizon] ?? null;
+      const calibrated = applyCalibration(
+        pred.confidence,
+        calibrationByHorizon.get(horizon) ?? null,
+        sampleAccuracy,
+      );
 
       await prisma.instrumentPrediction.upsert({
         where: {
-          instrumentId_date_horizon_mlModelId: {
+          instrumentId_originBucket_horizon_mlModelId: {
             instrumentId: instrument.id,
-            date,
+            originBucket,
             horizon,
             mlModelId: model.id,
           },
@@ -150,11 +173,12 @@ export async function runInstrumentPredictions(args?: {
         create: {
           instrumentId: instrument.id,
           date,
+          originBucket,
           asOf,
           targetAt,
           horizon,
           direction: pred.direction,
-          confidence: pred.confidence,
+          confidence: calibrated.confidence,
           probUp: pred.probUp,
           probSideways: pred.probSideways,
           probDown: pred.probDown,
@@ -163,7 +187,7 @@ export async function runInstrumentPredictions(args?: {
           returnHigh: pred.returnHigh,
           uncertainty: pred.uncertainty,
           runId,
-          calibrated: pred.calibrated,
+          calibrated: calibrated.calibrated,
           insufficientData: pred.insufficientData,
           mlModelId: model.id,
           features: {
@@ -175,10 +199,11 @@ export async function runInstrumentPredictions(args?: {
           },
         },
         update: {
+          date,
           asOf,
           targetAt,
           direction: pred.direction,
-          confidence: pred.confidence,
+          confidence: calibrated.confidence,
           probUp: pred.probUp,
           probSideways: pred.probSideways,
           probDown: pred.probDown,
@@ -187,7 +212,7 @@ export async function runInstrumentPredictions(args?: {
           returnHigh: pred.returnHigh,
           uncertainty: pred.uncertainty,
           runId,
-          calibrated: pred.calibrated,
+          calibrated: calibrated.calibrated,
           insufficientData: pred.insufficientData,
           features: {
             ...pred.features,
