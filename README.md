@@ -364,5 +364,4 @@ files have been created and committed.
 
 ## License
 
-No license file is currently included. Unless a license is added, the source
-code remains under the copyright holder's default rights.
+Licensed under the Apache License 2.0. See `LICENSE`.
