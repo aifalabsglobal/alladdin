@@ -1,0 +1,404 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Exchange {
+  NSE
+  BSE
+}
+
+enum InfluencerCategory {
+  TECHNICAL
+  FUNDAMENTAL
+  SENTIMENT
+  MACRO
+  FLOW
+}
+
+enum InfluencerScope {
+  STOCK
+  SECTOR
+  MARKET
+}
+
+enum HealthBand {
+  STRONG
+  HEALTHY
+  NEUTRAL
+  WEAK
+  CRITICAL
+}
+
+enum PredictionHorizon {
+  D1
+  W1
+  M1
+}
+
+enum Direction {
+  UP
+  DOWN
+  SIDEWAYS
+}
+
+enum MlKind {
+  RULES
+  RANDOM_FOREST
+  LSTM
+  GBM
+  ENSEMBLE
+}
+
+enum MlStatus {
+  TRAINING
+  ACTIVE
+  SHADOW
+  RETIRED
+}
+
+enum DataSource {
+  SYNTHETIC
+  YAHOO_FINANCE
+  NSE_BHAVCOPY
+  FII_DII
+  NEWS_RSS
+  MACRO
+  COMPUTED
+}
+
+model Sector {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  healthScore Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  stocks             Stock[]
+  influencerReadings InfluencerReading[]
+  newsItems          NewsItem[]
+}
+
+model Stock {
+  id         String   @id @default(cuid())
+  symbol     String   @unique
+  exchange   Exchange
+  name       String
+  sectorId   String
+  industry   String?
+  marketCap  Float?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  sector             Sector              @relation(fields: [sectorId], references: [id])
+  priceBars          PriceBar[]
+  fundamentals       Fundamental[]
+  influencerReadings InfluencerReading[]
+  healthScores       HealthScore[]
+  predictions        Prediction[]
+  featureSnapshots   FeatureSnapshot[]
+  watchlistItems     WatchlistItem[]
+  newsItems          NewsItem[]
+
+  @@index([sectorId])
+  @@index([exchange])
+  @@index([isActive])
+}
+
+model PriceBar {
+  id          String     @id @default(cuid())
+  stockId     String
+  date        DateTime   @db.Date
+  open        Float
+  high        Float
+  low         Float
+  close       Float
+  volume      Float
+  deliveryPct Float?
+  dataSource  DataSource @default(SYNTHETIC)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  stock Stock @relation(fields: [stockId], references: [id], onDelete: Cascade)
+
+  @@unique([stockId, date])
+  @@index([stockId])
+  @@index([date])
+  @@index([dataSource])
+}
+
+model Fundamental {
+  id            String     @id @default(cuid())
+  stockId       String
+  asOfDate      DateTime   @db.Date
+  pe            Float?
+  pb            Float?
+  eps           Float?
+  epsGrowthYoY  Float?
+  debtToEquity  Float?
+  roe           Float?
+  dataSource    DataSource @default(SYNTHETIC)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  stock Stock @relation(fields: [stockId], references: [id], onDelete: Cascade)
+
+  @@unique([stockId, asOfDate])
+  @@index([stockId])
+  @@index([asOfDate])
+  @@index([dataSource])
+}
+
+model Influencer {
+  id            String             @id @default(cuid())
+  key           String             @unique
+  name          String
+  category      InfluencerCategory
+  scope         InfluencerScope
+  defaultWeight Float
+  description   String
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  readings               InfluencerReading[]
+  topPositiveHealthScores HealthScore[]      @relation("TopPositiveInfluencer")
+  topNegativeHealthScores HealthScore[]      @relation("TopNegativeInfluencer")
+}
+
+model InfluencerReading {
+  id               String     @id @default(cuid())
+  influencerId     String
+  stockId          String?
+  sectorId         String?
+  date             DateTime   @db.Date
+  rawValue         Float
+  normalizedScore  Float
+  impactPoints     Float
+  reasonText       String
+  dataSource       DataSource @default(SYNTHETIC)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  influencer Influencer @relation(fields: [influencerId], references: [id], onDelete: Cascade)
+  stock      Stock?     @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  sector     Sector?    @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+
+  @@unique([influencerId, stockId, date])
+  @@index([influencerId])
+  @@index([stockId])
+  @@index([sectorId])
+  @@index([date])
+  @@index([dataSource])
+}
+
+model HealthScore {
+  id                      String     @id @default(cuid())
+  stockId                 String
+  date                    DateTime   @db.Date
+  score                   Float
+  band                    HealthBand
+  topPositiveInfluencerId String?
+  topNegativeInfluencerId String?
+  breakdown               Json
+  dataSource              DataSource @default(SYNTHETIC)
+  createdAt               DateTime   @default(now())
+  updatedAt               DateTime   @updatedAt
+
+  stock                 Stock       @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  topPositiveInfluencer Influencer? @relation("TopPositiveInfluencer", fields: [topPositiveInfluencerId], references: [id])
+  topNegativeInfluencer Influencer? @relation("TopNegativeInfluencer", fields: [topNegativeInfluencerId], references: [id])
+
+  @@unique([stockId, date])
+  @@index([stockId])
+  @@index([date])
+  @@index([band])
+  @@index([topPositiveInfluencerId])
+  @@index([topNegativeInfluencerId])
+  @@index([dataSource])
+}
+
+model MarketSnapshot {
+  id                 String     @id @default(cuid())
+  date               DateTime   @unique @db.Date
+  niftyClose         Float
+  sensexClose        Float
+  marketHealthScore  Float
+  breadthAdvancers   Int
+  breadthDecliners   Int
+  fiiNet             Float
+  diiNet             Float
+  indiaVix           Float
+  dataSource         DataSource @default(SYNTHETIC)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  @@index([dataSource])
+}
+
+model MlModel {
+  id           String   @id @default(cuid())
+  key          String
+  version      String
+  kind         MlKind
+  status       MlStatus @default(SHADOW)
+  hyperparams  Json?
+  metrics      Json?
+  trainedAt    DateTime?
+  artifactPath String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  predictions Prediction[]
+
+  @@unique([key, version])
+  @@index([status])
+  @@index([kind])
+}
+
+model Prediction {
+  id         String            @id @default(cuid())
+  stockId    String
+  date       DateTime          @db.Date
+  horizon    PredictionHorizon
+  direction  Direction
+  confidence Float
+  mlModelId  String
+  features   Json
+  outcome    Direction?
+  correct    Boolean?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  stock   Stock   @relation(fields: [stockId], references: [id], onDelete: Cascade)
+  mlModel MlModel @relation(fields: [mlModelId], references: [id], onDelete: Cascade)
+
+  @@unique([stockId, date, horizon, mlModelId])
+  @@index([stockId])
+  @@index([date])
+  @@index([mlModelId])
+  @@index([horizon])
+}
+
+model FeatureSnapshot {
+  id        String    @id @default(cuid())
+  stockId   String
+  date      DateTime  @db.Date
+  features  Json
+  label1d   Direction?
+  label1w   Direction?
+  label1m   Direction?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  stock Stock @relation(fields: [stockId], references: [id], onDelete: Cascade)
+
+  @@unique([stockId, date])
+  @@index([stockId])
+  @@index([date])
+}
+
+model Watchlist {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items WatchlistItem[]
+
+  @@index([userId])
+  @@unique([userId, name])
+}
+
+model WatchlistItem {
+  id          String   @id @default(cuid())
+  watchlistId String
+  stockId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  watchlist Watchlist @relation(fields: [watchlistId], references: [id], onDelete: Cascade)
+  stock     Stock     @relation(fields: [stockId], references: [id], onDelete: Cascade)
+
+  @@unique([watchlistId, stockId])
+  @@index([watchlistId])
+  @@index([stockId])
+}
+
+model NewsItem {
+  id              String   @id @default(cuid())
+  stockId         String?
+  sectorId        String?
+  publishedAt     DateTime
+  source          String
+  title           String
+  url             String
+  contentHash     String?
+  sentiment       Float?
+  sentimentReason String?
+  embedding       Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  stock  Stock?  @relation(fields: [stockId], references: [id], onDelete: SetNull)
+  sector Sector? @relation(fields: [sectorId], references: [id], onDelete: SetNull)
+
+  @@index([stockId])
+  @@index([sectorId])
+  @@index([publishedAt])
+  @@index([contentHash])
+  @@unique([url])
+}
+
+model ApiUsage {
+  id           String   @id @default(cuid())
+  provider     String
+  model        String
+  purpose      String
+  promptTokens Int      @default(0)
+  completionTokens Int  @default(0)
+  totalTokens  Int      @default(0)
+  date         DateTime @db.Date
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([provider, date])
+  @@index([date])
+  @@index([purpose])
+}
+
+model IngestionRun {
+  id           String     @id @default(cuid())
+  adapter      String
+  startedAt    DateTime   @default(now())
+  finishedAt   DateTime?
+  status       String
+  rowsUpserted Int        @default(0)
+  errorMessage String?
+  dataSource   DataSource?
+  metadata     Json?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([adapter])
+  @@index([startedAt])
+  @@index([status])
+}
+
+model UserColumnPreference {
+  id        String   @id @default(cuid())
+  userId    String
+  pageKey   String
+  columns   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, pageKey])
+  @@index([userId])
+}

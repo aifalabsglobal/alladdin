@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>QuantPulse AI | Portfolio &amp; Watchlist</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Geist:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #10141a;
+            color: #dfe2eb;
+            overflow-x: hidden;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(22, 27, 34, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .trend-up { color: #75ff9e; }
+        .trend-down { color: #ffb3ae; }
+        .ai-glow {
+            box-shadow: 0 0 15px rgba(124, 77, 255, 0.15);
+            border: 1px solid rgba(124, 77, 255, 0.3);
+        }
+        .data-flash-up { animation: flash-up 1s ease-out; }
+        .data-flash-down { animation: flash-down 1s ease-out; }
+        @keyframes flash-up {
+            0% { background-color: rgba(0, 230, 118, 0.2); }
+            100% { background-color: transparent; }
+        }
+        @keyframes flash-down {
+            0% { background-color: rgba(255, 179, 174, 0.2); }
+            100% { background-color: transparent; }
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0a0e14; }
+        ::-webkit-scrollbar-thumb { background: #3b4a3d; border-radius: 10px; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed": "#20005f",
+                        "surface-bright": "#353940",
+                        "surface-container-lowest": "#0a0e14",
+                        "error-container": "#93000a",
+                        "tertiary-fixed-dim": "#cdbdff",
+                        "on-primary-container": "#00612e",
+                        "on-tertiary": "#370096",
+                        "background": "#10141a",
+                        "outline": "#859585",
+                        "surface-container-low": "#181c22",
+                        "surface": "#10141a",
+                        "on-error-container": "#ffdad6",
+                        "tertiary": "#e9dfff",
+                        "inverse-primary": "#006d35",
+                        "tertiary-container": "#cfbfff",
+                        "primary-container": "#00e676",
+                        "on-surface": "#dfe2eb",
+                        "secondary-container": "#a00118",
+                        "outline-variant": "#3b4a3d",
+                        "on-primary-fixed-variant": "#005226",
+                        "on-secondary-container": "#ffa8a3",
+                        "surface-container-high": "#262a31",
+                        "on-error": "#690005",
+                        "on-tertiary-container": "#5d21df",
+                        "inverse-surface": "#dfe2eb",
+                        "primary-fixed-dim": "#00e475",
+                        "surface-variant": "#31353c",
+                        "surface-container-highest": "#31353c",
+                        "on-secondary-fixed-variant": "#930015",
+                        "on-secondary-fixed": "#410004",
+                        "on-secondary": "#68000c",
+                        "inverse-on-surface": "#2d3137",
+                        "on-surface-variant": "#bacbb9",
+                        "on-background": "#dfe2eb",
+                        "secondary": "#ffb3ae",
+                        "primary-fixed": "#62ff96",
+                        "on-primary": "#003918",
+                        "on-tertiary-fixed-variant": "#4f00d0",
+                        "surface-tint": "#00e475",
+                        "secondary-fixed": "#ffdad7",
+                        "surface-container": "#1c2026",
+                        "on-primary-fixed": "#00210b",
+                        "tertiary-fixed": "#e8deff",
+                        "error": "#ffb4ab",
+                        "secondary-fixed-dim": "#ffb3ae",
+                        "surface-dim": "#10141a",
+                        "primary": "#75ff9e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "margin-mobile": "12px",
+                        "margin-desktop": "24px",
+                        "gutter": "16px",
+                        "container-max": "1440px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "data-mono": ["Geist"],
+                        "headline-md-mobile": ["Inter"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.08em", "fontWeight": "700"}],
+                        "data-mono": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "headline-md-mobile": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 flex items-center justify-between px-margin-desktop h-16 bg-background border-b border-outline-variant">
+<div class="flex items-center gap-8">
+<span class="font-headline-md text-headline-md font-bold text-primary">QuantPulse AI</span>
+<div class="hidden md:flex gap-6">
+<a class="text-primary font-bold border-b-2 border-primary py-1" href="#">Watchlist</a>
+<a class="text-on-surface-variant font-medium hover:bg-surface-variant/10 transition-colors px-2 py-1" href="#">Portfolio</a>
+<a class="text-on-surface-variant font-medium hover:bg-surface-variant/10 transition-colors px-2 py-1" href="#">Markets</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative group">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer p-2 hover:bg-surface-variant/10 rounded-full transition-colors">notifications</span>
+<div class="absolute top-2 right-2 w-2 h-2 bg-secondary rounded-full"></div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer p-2 hover:bg-surface-variant/10 rounded-full transition-colors">account_circle</span>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 flex flex-col p-4 bg-surface-container-low border-r border-outline-variant hidden md:flex">
+<div class="flex items-center gap-3 mb-8 px-4">
+<div class="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined">person</span>
+</div>
+<div>
+<p class="font-body-md text-body-md text-on-surface font-semibold">Pro Trader</p>
+<p class="text-[11px] text-primary/70 uppercase tracking-wider font-bold">AI Tier: Institutional</p>
+</div>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-2 hover:text-on-surface hover:bg-surface-variant/20 transition-all rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Overview</span>
+</a>
+<a class="flex items-center gap-3 bg-primary-container text-on-primary-container rounded-xl px-4 py-2" href="#">
+<span class="material-symbols-outlined" data-icon="list_alt">list_alt</span>
+<span>Watchlist</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-2 hover:text-on-surface hover:bg-surface-variant/20 transition-all rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="psychology">psychology</span>
+<span>AI Predictions</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-2 hover:text-on-surface hover:bg-surface-variant/20 transition-all rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span>Analysis</span>
+</a>
+</nav>
+<div class="mt-auto space-y-2 pt-4 border-t border-outline-variant/30">
+<div class="p-4 rounded-xl bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 mb-4">
+<p class="text-[12px] font-bold text-primary mb-1">Upgrade to Premium</p>
+<p class="text-[11px] text-on-surface-variant leading-tight">Unlock HFT signals and sentiment analysis.</p>
+</div>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-2 hover:text-on-surface transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+<a class="flex items-center gap-3 text-on-surface-variant px-4 py-2 hover:text-on-surface transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span>Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="md:ml-64 mt-16 p-margin-desktop min-h-screen">
+<div class="max-w-container-max mx-auto space-y-gutter">
+<!-- Hero Header / Portfolio Health AI Summary -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+<div class="lg:col-span-2 glass-panel p-6 rounded-xl flex flex-col justify-between ai-glow relative overflow-hidden">
+
+<div class="relative z-10">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary" data-icon="auto_awesome" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Portfolio Health Summary</h2>
+</div>
+<p class="text-on-surface-variant font-body-md max-w-2xl">
+                            Your portfolio is currently <span class="text-primary font-bold">Optimized (88/100)</span>. AI suggests a slight rotation from high-volatility IT stocks into FMCG to hedge against upcoming inflation data. Current exposure to TATAMOTORS shows a 12.4% bullish divergence against the sector average.
+                        </p>
+</div>
+<div class="relative z-10 flex gap-4 mt-6 overflow-x-auto pb-2">
+<div class="flex-shrink-0 bg-surface-container p-3 rounded-lg border border-outline-variant min-w-[120px]">
+<p class="text-label-caps text-on-surface-variant mb-1 uppercase">Diversification</p>
+<p class="font-data-mono text-headline-md text-primary">82%</p>
+</div>
+<div class="flex-shrink-0 bg-surface-container p-3 rounded-lg border border-outline-variant min-w-[120px]">
+<p class="text-label-caps text-on-surface-variant mb-1 uppercase">Volatility Index</p>
+<p class="font-data-mono text-headline-md text-secondary">Low</p>
+</div>
+<div class="flex-shrink-0 bg-surface-container p-3 rounded-lg border border-outline-variant min-w-[120px]">
+<p class="text-label-caps text-on-surface-variant mb-1 uppercase">AI Signal</p>
+<p class="font-data-mono text-headline-md text-primary">Bullish</p>
+</div>
+</div>
+</div>
+<!-- Quick Alerts management -->
+<div class="glass-panel p-6 rounded-xl space-y-4">
+<div class="flex items-center justify-between">
+<h3 class="font-headline-md text-body-md font-bold text-on-surface">Active Alerts</h3>
+<span class="material-symbols-outlined text-primary cursor-pointer hover:rotate-90 transition-transform">add</span>
+</div>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-3 bg-surface-container rounded-lg border-l-4 border-secondary">
+<div>
+<p class="text-body-md font-bold text-on-surface">TATAMOTORS</p>
+<p class="text-[11px] text-on-surface-variant">AI Confidence &lt; 70%</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer text-sm">notifications_active</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container rounded-lg border-l-4 border-primary">
+<div>
+<p class="text-body-md font-bold text-on-surface">RELIANCE</p>
+<p class="text-[11px] text-on-surface-variant">Breakout &gt; ₹2,600</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer text-sm">notifications_active</span>
+</div>
+<button class="w-full py-2 text-label-caps text-on-surface-variant border border-outline-variant rounded hover:bg-surface-variant/20 transition-all">VIEW ALL ALERTS</button>
+</div>
+</div>
+</div>
+<!-- Bento Grid: Watchlist & Performance -->
+<div class="grid grid-cols-1 xl:grid-cols-4 gap-gutter">
+<!-- Main Watchlist Table -->
+<div class="xl:col-span-3 glass-panel rounded-xl overflow-hidden">
+<div class="p-6 border-b border-outline-variant flex items-center justify-between">
+<h3 class="font-headline-md text-headline-md text-on-surface">Personal Watchlist</h3>
+<div class="flex gap-2">
+<button class="p-2 bg-surface-container rounded border border-outline-variant hover:bg-surface-variant/30"><span class="material-symbols-outlined text-sm">filter_list</span></button>
+<button class="p-2 bg-surface-container rounded border border-outline-variant hover:bg-surface-variant/30"><span class="material-symbols-outlined text-sm">download</span></button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-label-caps text-on-surface-variant border-b border-outline-variant">
+<th class="px-6 py-4">SYMBOL</th>
+<th class="px-6 py-4">LAST PRICE</th>
+<th class="px-6 py-4">24H CHANGE</th>
+<th class="px-6 py-4">AI TREND (24H)</th>
+<th class="px-6 py-4">CONFIDENCE</th>
+<th class="px-6 py-4 text-right">ACTIONS</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<tr class="hover:bg-white/5 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container flex items-center justify-center font-bold text-xs text-on-surface">TM</div>
+<div>
+<p class="font-bold text-on-surface">TATAMOTORS</p>
+<p class="text-[10px] text-on-surface-variant">Automobile</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 font-data-mono text-on-surface">₹642.45</td>
+<td class="px-6 py-4 font-data-mono text-primary">+2.45%</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'wght' 700;">trending_up</span>
+<span class="text-xs font-semibold text-primary/80 uppercase">Strong Buy</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="w-24 h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="w-[92%] h-full bg-primary"></div>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="px-3 py-1 bg-primary-container text-on-primary-container rounded font-bold text-xs hover:opacity-90 transition-opacity">BUY</button>
+<button class="px-3 py-1 border border-secondary text-secondary rounded font-bold text-xs hover:bg-secondary/10 transition-colors">SELL</button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-white/5 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container flex items-center justify-center font-bold text-xs text-on-surface">RI</div>
+<div>
+<p class="font-bold text-on-surface">RELIANCE</p>
+<p class="text-[10px] text-on-surface-variant">Energy &amp; Retail</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 font-data-mono text-on-surface">₹2,584.10</td>
+<td class="px-6 py-4 font-data-mono text-secondary">-0.15%</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant">horizontal_rule</span>
+<span class="text-xs font-semibold text-on-surface-variant uppercase">Neutral</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="w-24 h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="w-[54%] h-full bg-on-surface-variant"></div>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="px-3 py-1 bg-primary-container text-on-primary-container rounded font-bold text-xs hover:opacity-90 transition-opacity">BUY</button>
+<button class="px-3 py-1 border border-secondary text-secondary rounded font-bold text-xs hover:bg-secondary/10 transition-colors">SELL</button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-white/5 transition-colors group data-flash-up">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container flex items-center justify-center font-bold text-xs text-on-surface">IN</div>
+<div>
+<p class="font-bold text-on-surface">INFY</p>
+<p class="text-[10px] text-on-surface-variant">IT Services</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 font-data-mono text-on-surface">₹1,442.20</td>
+<td class="px-6 py-4 font-data-mono text-primary">+1.12%</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">trending_up</span>
+<span class="text-xs font-semibold text-primary/80 uppercase">Accumulate</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="w-24 h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="w-[78%] h-full bg-primary"></div>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="px-3 py-1 bg-primary-container text-on-primary-container rounded font-bold text-xs hover:opacity-90 transition-opacity">BUY</button>
+<button class="px-3 py-1 border border-secondary text-secondary rounded font-bold text-xs hover:bg-secondary/10 transition-colors">SELL</button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-white/5 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container flex items-center justify-center font-bold text-xs text-on-surface">HD</div>
+<div>
+<p class="font-bold text-on-surface">HDFCBANK</p>
+<p class="text-[10px] text-on-surface-variant">Banking</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 font-data-mono text-on-surface">₹1,655.00</td>
+<td class="px-6 py-4 font-data-mono text-secondary">-1.84%</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">trending_down</span>
+<span class="text-xs font-semibold text-secondary uppercase">Bearish</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="w-24 h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="w-[85%] h-full bg-secondary"></div>
+</div>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex justify-end gap-2">
+<button class="px-3 py-1 bg-primary-container text-on-primary-container rounded font-bold text-xs hover:opacity-90 transition-opacity">BUY</button>
+<button class="px-3 py-1 border border-secondary text-secondary rounded font-bold text-xs hover:bg-secondary/10 transition-colors">SELL</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Brokerage Integration / Market Status -->
+<div class="xl:col-span-1 space-y-gutter">
+<div class="glass-panel p-6 rounded-xl relative overflow-hidden">
+<div class="absolute -right-4 -top-4 w-24 h-24 bg-primary/10 blur-3xl rounded-full"></div>
+<h4 class="text-label-caps text-on-surface-variant mb-4 uppercase">Brokerage Status</h4>
+<div class="flex items-center gap-4 mb-6">
+<div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">account_balance_wallet</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Zerodha Kite</p>
+<p class="text-xs text-primary flex items-center gap-1">
+<span class="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></span> Connected
+                                </p>
+</div>
+</div>
+<div class="space-y-4">
+<div class="flex justify-between items-center">
+<span class="text-on-surface-variant text-sm">Available Margin</span>
+<span class="font-data-mono text-on-surface">₹4,20,500</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-on-surface-variant text-sm">Utilized Today</span>
+<span class="font-data-mono text-secondary">₹1,12,000</span>
+</div>
+<button class="w-full py-3 bg-white text-black font-bold rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">bolt</span>
+                                Execute Basket Trade
+                            </button>
+</div>
+</div>
+<div class="glass-panel p-6 rounded-xl">
+<h4 class="text-label-caps text-on-surface-variant mb-4 uppercase">AI Signal Distribution</h4>
+<div class="space-y-4">
+<div class="relative h-2 w-full bg-surface-container rounded-full flex overflow-hidden">
+<div class="h-full bg-primary" style="width: 65%;"></div>
+<div class="h-full bg-on-surface-variant" style="width: 20%;"></div>
+<div class="h-full bg-secondary" style="width: 15%;"></div>
+</div>
+<div class="grid grid-cols-3 gap-2">
+<div class="text-center">
+<p class="text-[10px] text-on-surface-variant uppercase">Bullish</p>
+<p class="font-data-mono text-primary font-bold">65%</p>
+</div>
+<div class="text-center">
+<p class="text-[10px] text-on-surface-variant uppercase">Neutral</p>
+<p class="font-data-mono text-on-surface-variant font-bold">20%</p>
+</div>
+<div class="text-center">
+<p class="text-[10px] text-on-surface-variant uppercase">Bearish</p>
+<p class="font-data-mono text-secondary font-bold">15%</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Sector Exposure Map -->
+<div class="glass-panel rounded-xl overflow-hidden aspect-square flex flex-col">
+<div class="p-4 border-b border-outline-variant">
+<h4 class="text-label-caps text-on-surface-variant uppercase">Geo-Exposure Insights</h4>
+</div>
+<div class="flex-1 bg-surface-container relative">
+<!-- Injected Map Placeholder -->
+<div class="absolute inset-0 grayscale opacity-40 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="text-on-surface-variant font-data-mono text-xs text-center p-4">Regional Market Sentiment:<br/><span class="text-primary">NIFTY 50 (India) Strong Outperformance</span></span>
+</div>
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-primary rounded-full blur-[2px] animate-ping"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 group">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+<span class="absolute right-16 bg-surface-container px-3 py-1 rounded text-xs text-on-surface opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-outline-variant pointer-events-none">Add to Watchlist</span>
+</button>
+<script>
+        // Micro-interactions for real-time price feel
+        document.addEventListener('DOMContentLoaded', () => {
+            const tableRows = document.querySelectorAll('tr.group');
+            
+            setInterval(() => {
+                const randomRow = tableRows[Math.floor(Math.random() * tableRows.length)];
+                const isPositive = Math.random() > 0.4;
+                randomRow.classList.add(isPositive ? 'data-flash-up' : 'data-flash-down');
+                
+                setTimeout(() => {
+                    randomRow.classList.remove('data-flash-up', 'data-flash-down');
+                }, 1000);
+            }, 3000);
+
+            // Button hover sounds or clicks (visual feedback only for this demo)
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(btn => {
+                btn.addEventListener('mousedown', () => {
+                    btn.classList.add('scale-95');
+                });
+                btn.addEventListener('mouseup', () => {
+                    btn.classList.remove('scale-95');
+                });
+            });
+        });
+    </script>
+</body></html>
