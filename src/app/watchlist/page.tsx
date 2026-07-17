@@ -18,7 +18,7 @@ export default async function WatchlistPage() {
       <PageHeader
         title="Watchlist"
         description="Demo preview using seeded stocks. Sign-in with per-user watchlists arrives in a later phase."
-        action={<SyntheticTag />}
+        action={<SyntheticTag label="Computed from real NSE data" />}
       />
 
       <div className="mb-6 rounded-2xl border border-ai/30 bg-ai/10 px-4 py-3 text-sm text-ink">

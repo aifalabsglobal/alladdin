@@ -3,6 +3,10 @@
     {
       "path": "/api/jobs/ingest-eod",
       "schedule": "30 12 * * 1-5"
+    },
+    {
+      "path": "/api/jobs/score",
+      "schedule": "45 12 * * 1-5"
     }
   ]
 }

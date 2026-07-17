@@ -8,6 +8,11 @@ export const breakdownItemSchema = z.object({
   normalizedScore: z.number(),
   impactPoints: z.number(),
   reasonText: z.string(),
+  rawValue: z.number().optional(),
+  dataQuality: z.number().min(0).max(1).optional(),
+  provenance: z.array(z.string()).optional(),
+  isFallback: z.boolean().optional(),
+  engineVersion: z.string().optional(),
 });
 
 export type BreakdownItem = z.infer<typeof breakdownItemSchema>;

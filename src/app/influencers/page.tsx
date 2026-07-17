@@ -31,7 +31,7 @@ export default async function InfluencersPage() {
       <PageHeader
         title="Influencer Explorer"
         description="Every factor that feeds the health score, what it measures, and its latest market reading."
-        action={<SyntheticTag asOf={asOf ? formatDate(asOf) : undefined} />}
+        action={<SyntheticTag label="Computed from real NSE data" asOf={asOf ? formatDate(asOf) : undefined} />}
       />
 
       <div className="space-y-8">

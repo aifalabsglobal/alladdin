@@ -49,7 +49,12 @@ export default async function DashboardPage() {
       <PageHeader
         title="Market Health Overview"
         description="Composite market health with the influencers driving today's signals."
-        action={<SyntheticTag asOf={formatDate(overview.asOf)} />}
+        action={
+          <SyntheticTag
+            label="Real NSE scores · synthetic market snapshot"
+            asOf={formatDate(overview.asOf)}
+          />
+        }
       />
 
       {/* KPI strip */}

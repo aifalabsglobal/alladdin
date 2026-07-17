@@ -55,7 +55,7 @@ export default async function StocksPage({
       <PageHeader
         title="All Stocks"
         description={`${result.total} active NSE/BSE listings with latest health scores.`}
-        action={<SyntheticTag />}
+        action={<SyntheticTag label="Computed from real NSE data" />}
       />
 
       {/* Filters */}

@@ -152,6 +152,7 @@ export type StockDetail = {
   close: number | null;
   changePct: number | null;
   score: number | null;
+  scoreConfidence: number | null;
   band: HealthBand | null;
   breakdown: BreakdownItem[];
   chart: { date: Date; close: number; health: number }[];
@@ -185,6 +186,19 @@ export async function getStockDetail(symbol: string): Promise<StockDetail | null
   const latestBar = stock.priceBars[0];
   const prevBar = stock.priceBars[1];
   const latestScore = stock.healthScores[0];
+  const parsedBreakdown = latestScore
+    ? parseBreakdown(latestScore.breakdown).sort(
+        (a, b) => b.impactPoints - a.impactPoints,
+      )
+    : [];
+  const scoreConfidence =
+    parsedBreakdown.length > 0 &&
+    parsedBreakdown.some((item) => item.dataQuality !== undefined)
+      ? parsedBreakdown.reduce(
+          (sum, item) => sum + item.weight * (item.dataQuality ?? 0),
+          0,
+        )
+      : null;
 
   // Latest prediction per horizon
   const latestPredictionDate = await prisma.prediction.findFirst({
@@ -252,12 +266,9 @@ export async function getStockDetail(symbol: string): Promise<StockDetail | null
     changePct:
       latestBar && prevBar ? dayChangePct(latestBar.close, prevBar.close) : null,
     score: latestScore?.score ?? null,
+    scoreConfidence,
     band: latestScore?.band ?? null,
-    breakdown: latestScore
-      ? parseBreakdown(latestScore.breakdown).sort(
-          (a, b) => b.impactPoints - a.impactPoints,
-        )
-      : [],
+    breakdown: parsedBreakdown,
     chart,
     predictions: predictions.map((p) => {
       const metrics = parseModelMetrics(p.mlModel.metrics);

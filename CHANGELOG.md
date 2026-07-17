@@ -133,3 +133,53 @@ Awaiting confirmation before Phase 3 (real ingestion adapters + cron jobs).
 ### Stop point
 
 Awaiting confirmation before Phase 4 (scoring engine on real data).
+
+## Phase 4 — Real-data scoring engine + AI readiness (2026-07-17)
+
+### Audit result
+
+- Existing `computeHealthScore`, band mapping, 11 influencer definitions, and JSON breakdown parser were reusable.
+- No real indicator math or scoring job existed; all prior readings/scores came from deterministic synthetic seed signals.
+- One real EOD session was insufficient for RSI/50DMA/200DMA, so an official NSE history backfill was required.
+
+### Created
+
+- `scripts/backfill-bhavcopy.ts` — idempotent official NSE bhavcopy backfill; supersedes same-date synthetic bars without deleting unrelated synthetic history
+- `src/lib/scoring/indicators.ts` (+ tests) — pure bounded math for SMA, Wilder RSI, median, z-score, decay weighting, percent changes
+- `src/lib/scoring/influencers.ts` (+ tests) — deterministic normalizers for all 11 v1 influencers, each returning raw value, normalized score, reason, provenance, fallback flag, and data quality
+- `src/lib/scoring/sensitivity.ts` — conservative sector sensitivity map for USD/INR, crude, and FII flow
+- `src/lib/scoring/engine.ts` — point-in-time, idempotent scoring pass (`date <= asOf`) that writes COMPUTED readings/scores, sector averages, and AI-ready `FeatureSnapshot` vectors
+- `src/app/api/jobs/score/route.ts` — cron-protected scoring endpoint with optional date
+- `scripts/verify-scoring.ts` — validates row counts, score bounds, breakdown shape, provenance, and feature snapshots
+
+### Modified
+
+- `vercel.json` — score job scheduled 15 minutes after EOD ingestion
+- `src/lib/queries/parsers.ts` — validates optional scoring metadata (`rawValue`, `dataQuality`, `provenance`, `isFallback`, `engineVersion`)
+- `src/lib/queries/stocks.ts` and stock detail UI — derive and display weighted data confidence
+- Page provenance tags — distinguish real NSE computed scores from synthetic market snapshots
+
+### Real-data results
+
+- Backfilled 220 official NSE sessions: 10,810 stock-day price bars.
+- Scored 50 active stocks as of 2026-07-16.
+- Wrote 50 COMPUTED HealthScores, 550 COMPUTED InfluencerReadings, and 50 leakage-safe FeatureSnapshots.
+- Score range: 36.28–59.96; average weighted data confidence: 43.1%.
+- Technical factors use real NSE history. Missing Yahoo fundamentals, real news, VIX, and USD/INR/crude stay neutral with explicit `dataQuality=0`; one-day FII and market-proxy sector momentum are marked lower-quality fallbacks.
+- FeatureSnapshot labels remain null until future prices mature; no same-day target leakage is introduced.
+
+### Verification
+
+| Check | Result |
+|-------|--------|
+| Bhavcopy backfill | 220/220 sessions, 10,810 stock-days |
+| Unauthorized score POST | 401 |
+| Two consecutive score runs | Identical summaries; no row-count growth |
+| Computed output | 50 scores, 550 readings, 50 feature snapshots; 11 breakdown entries per stock |
+| HTTP dashboard smoke | All six data pages 200 and show real/computed provenance |
+| `npm run typecheck` / `npm test` / `npm run lint` | Pass (33/33 tests) |
+| `npm run build` | Pass; score and ingestion routes compiled |
+
+### Stop point
+
+Awaiting confirmation before Phase 5 (OpenAI news sentiment, baseline predictions, and feature-store jobs).

@@ -16,7 +16,7 @@ export default async function SectorsPage() {
       <PageHeader
         title="Sectors"
         description="Composite sector health from constituent stock scores."
-        action={<SyntheticTag />}
+        action={<SyntheticTag label="Computed from real NSE data" />}
       />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {sectors.map((s) => (

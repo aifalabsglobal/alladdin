@@ -44,7 +44,7 @@ export default async function StockDetailPage({
         title={`${stock.symbol} · ${stock.name}`}
         description={`${stock.exchange} · ${stock.sectorName}${stock.industry ? ` · ${stock.industry}` : ""} · Market cap ${formatMarketCap(stock.marketCap)}`}
         action={
-          <SyntheticTag asOf={stock.asOf ? formatDate(stock.asOf) : undefined} />
+          <SyntheticTag label="Computed from real NSE data" asOf={stock.asOf ? formatDate(stock.asOf) : undefined} />
         }
       />
 
@@ -68,6 +68,14 @@ export default async function StockDetailPage({
             ) : null}
             {stock.band ? (
               <p className="mt-3 text-xs text-muted">{bandLabel(stock.band)}</p>
+            ) : null}
+            {stock.scoreConfidence !== null ? (
+              <p className="mt-1 text-xs text-muted">
+                Data confidence{" "}
+                <span className="num font-semibold text-ai">
+                  {Math.round(stock.scoreConfidence * 100)}%
+                </span>
+              </p>
             ) : null}
           </div>
           {stock.score !== null ? (

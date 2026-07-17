@@ -27,7 +27,7 @@ export default async function SectorDetailPage({
       <PageHeader
         title={sector.name}
         description={`${sector.constituents.length} constituent stocks ranked by health.`}
-        action={<SyntheticTag />}
+        action={<SyntheticTag label="Computed from real NSE data" />}
       />
 
       <div className="grid gap-6 lg:grid-cols-3">
