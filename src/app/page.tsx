@@ -1,16 +1,31 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function HomePage() {
   return (
     <div className="space-y-8">
-      <section className="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-100 sm:p-12">
-        <p className="mb-3 inline-flex rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-          Phase 1 — Scaffold + Schema + Seed
-        </p>
-        <h1 className="max-w-2xl text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-          Alladin shows the health of NSE/BSE stocks in plain language.
-        </h1>
-        <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-600">
+      <section className="glass-card rounded-3xl p-8 sm:p-12">
+        <div className="flex flex-wrap items-center gap-6">
+          <span className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-lg">
+            <Image
+              src="/logo.png"
+              alt="Alladin logo"
+              width={72}
+              height={72}
+              className="h-18 w-18 object-contain"
+              priority
+            />
+          </span>
+          <div>
+            <p className="mb-2 inline-flex rounded-full bg-ai/15 px-3 py-1 text-xs font-semibold text-ai">
+              Predict. Analyze. Explain.
+            </p>
+            <h1 className="max-w-2xl text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
+              Alladin shows the health of NSE/BSE stocks in plain language.
+            </h1>
+          </div>
+        </div>
+        <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted">
           Each stock gets a composite Health Score (0–100) built from weighted
           influencers — technical, fundamental, sentiment, flow, and macro
           factors. Every score comes with a one-sentence explanation of what is
@@ -19,13 +34,13 @@ export default function HomePage() {
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
             href="/dashboard"
-            className="rounded-2xl bg-gradient-to-r from-accent-from to-accent-to px-5 py-3 text-sm font-semibold text-white shadow-sm"
+            className="rounded-2xl bg-positive px-5 py-3 text-sm font-semibold text-canvas shadow-sm transition hover:bg-positive-soft"
           >
             Open dashboard
           </Link>
           <Link
             href="/stocks"
-            className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-semibold text-ink"
+            className="rounded-2xl border border-line bg-card px-5 py-3 text-sm font-semibold text-ink transition hover:bg-card-raised"
           >
             Browse stocks
           </Link>
@@ -47,12 +62,9 @@ export default function HomePage() {
             body: "Built around NSE/BSE symbols, FII/DII flows, and India VIX.",
           },
         ].map((card) => (
-          <article
-            key={card.title}
-            className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-100"
-          >
+          <article key={card.title} className="glass-card rounded-3xl p-6">
             <h2 className="text-lg font-semibold text-ink">{card.title}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">{card.body}</p>
+            <p className="mt-2 text-sm leading-relaxed text-muted">{card.body}</p>
           </article>
         ))}
       </section>

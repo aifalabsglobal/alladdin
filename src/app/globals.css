@@ -1,27 +1,41 @@
 @import "tailwindcss";
 
 :root {
-  --canvas: #f4f7fe;
-  --card: #ffffff;
-  --ink: #1b2559;
-  --muted: #a3aed0;
-  --accent-from: #4318ff;
-  --accent-to: #868cff;
-  --band-strong: #c6f6d5;
-  --band-healthy: #d1fae5;
-  --band-neutral: #fef3c7;
-  --band-weak: #ffedd5;
-  --band-critical: #fecaca;
+  --canvas: #0a0e14;
+  --surface: #10141a;
+  --card: #181c22;
+  --card-raised: #1c2026;
+  --line: #262c35;
+  --ink: #f2f5f9;
+  --muted: #8e99a8;
+  --positive: #00e676;
+  --positive-soft: #75ff9e;
+  --negative: #ff5252;
+  --negative-soft: #ffb3ae;
+  --ai: #7c4dff;
+  --warning: #ffca28;
 }
 
 @theme inline {
   --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
   --color-card: var(--card);
+  --color-card-raised: var(--card-raised);
+  --color-line: var(--line);
   --color-ink: var(--ink);
   --color-muted: var(--muted);
-  --color-accent-from: var(--accent-from);
-  --color-accent-to: var(--accent-to);
+  --color-positive: var(--positive);
+  --color-positive-soft: var(--positive-soft);
+  --color-negative: var(--negative);
+  --color-negative-soft: var(--negative-soft);
+  --color-ai: var(--ai);
+  --color-warning: var(--warning);
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+html {
+  background: var(--canvas);
 }
 
 body {
@@ -33,4 +47,30 @@ body {
 
 * {
   box-sizing: border-box;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--ai) 45%, transparent);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--positive);
+  outline-offset: 2px;
+}
+
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.glass-card {
+  background: linear-gradient(150deg, rgba(28, 32, 38, 0.92), rgba(16, 20, 26, 0.96));
+  border: 1px solid var(--line);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
+}
+
+.scrollbar-slim {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
 }

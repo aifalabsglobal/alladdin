@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/jobs/ingest-eod",
+      "schedule": "30 12 * * 1-5"
+    }
+  ]
+}

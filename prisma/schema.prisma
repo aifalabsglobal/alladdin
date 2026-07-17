@@ -391,6 +391,21 @@ model IngestionRun {
   @@index([status])
 }
 
+model MacroIndicator {
+  id         String     @id @default(cuid())
+  key        String
+  date       DateTime   @db.Date
+  value      Float
+  dataSource DataSource @default(MACRO)
+  metadata   Json?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@unique([key, date])
+  @@index([key])
+  @@index([date])
+}
+
 model UserColumnPreference {
   id        String   @id @default(cuid())
   userId    String
