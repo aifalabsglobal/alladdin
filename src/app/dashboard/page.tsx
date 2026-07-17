@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { ScoreDonut } from "@/components/charts/ScoreDonut";
 import { Sparkline } from "@/components/charts/Sparkline";
+import { AlertsPanel } from "@/components/ui/AlertsPanel";
 import { Card } from "@/components/ui/Card";
 import { DataSourcePopover } from "@/components/ui/DataSourcePopover";
 import { DirectionChip } from "@/components/ui/DirectionChip";
@@ -15,6 +16,7 @@ import { SectorHeatmap } from "@/components/ui/SectorHeatmap";
 import { ServiceHealth } from "@/components/ui/ServiceHealth";
 import { formatCrore, formatDate, formatMoney, formatPct } from "@/lib/format";
 import { marketSessionState } from "@/lib/live/freshness";
+import { getOperationalAlerts } from "@/lib/queries/alerts";
 import { getGlobalMarketSummary } from "@/lib/queries/assets";
 import {
   getAttentionMovers,
@@ -53,6 +55,7 @@ export default async function DashboardPage() {
     predictions,
     healthItems,
     global,
+    alerts,
   ] = await Promise.all([
     getMarketOverview(),
     getMarketSparklines(),
@@ -63,6 +66,7 @@ export default async function DashboardPage() {
     getHighConfidencePredictions(8),
     getServiceHealthItems(),
     getGlobalMarketSummary(),
+    getOperationalAlerts(),
   ]);
 
   if (!overview) {
@@ -90,6 +94,8 @@ export default async function DashboardPage() {
           />
         }
       />
+
+      <AlertsPanel alerts={alerts} />
 
       <Card
         title="Global session and quote strip"

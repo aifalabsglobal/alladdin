@@ -63,7 +63,26 @@ export default async function AssetDetailPage({
           volume: bar.volume,
         }));
 
-  const predictions = asset.stock?.predictions ?? [];
+  // Prefer instrument-native predictions; fall back to linked equity signals.
+  const rawPredictions =
+    asset.predictions.length > 0
+      ? asset.predictions
+      : (asset.stock?.predictions ?? []);
+  const predictions = rawPredictions.map((prediction) => ({
+    id: prediction.id,
+    horizon: prediction.horizon,
+    direction: prediction.direction,
+    confidence: prediction.confidence,
+    probUp: prediction.probUp,
+    probSideways: prediction.probSideways,
+    probDown: prediction.probDown,
+    expectedReturn: prediction.expectedReturn,
+    calibrated: prediction.calibrated,
+    insufficientData: prediction.insufficientData,
+    modelKey: prediction.mlModel.key,
+    modelVersion: prediction.mlModel.version,
+    modelMetrics: prediction.mlModel.metrics,
+  }));
   const currentFreshness =
     latestQuote?.quality === "STALE"
       ? "stale"
@@ -164,10 +183,10 @@ export default async function AssetDetailPage({
             <ul className="space-y-3">
               {predictions.map((prediction) => {
                 const metrics =
-                  prediction.mlModel.metrics &&
-                  typeof prediction.mlModel.metrics === "object" &&
-                  !Array.isArray(prediction.mlModel.metrics)
-                    ? (prediction.mlModel.metrics as Record<string, unknown>)
+                  prediction.modelMetrics &&
+                  typeof prediction.modelMetrics === "object" &&
+                  !Array.isArray(prediction.modelMetrics)
+                    ? (prediction.modelMetrics as Record<string, unknown>)
                     : {};
                 const samples =
                   metrics.samples &&
@@ -214,7 +233,7 @@ export default async function AssetDetailPage({
                     {prediction.expectedReturn === null
                       ? "After-cost EV unavailable"
                       : `Pre-cost expected return ${formatPct(prediction.expectedReturn * 100)}`}{" "}
-                    · {prediction.mlModel.key} v{prediction.mlModel.version}
+                    · {prediction.modelKey} v{prediction.modelVersion}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     <span

@@ -137,6 +137,12 @@ export async function getAssetDetail(id: string) {
         orderBy: { openTime: "desc" },
         take: 180,
       },
+      predictions: {
+        where: { mlModel: { status: "ACTIVE" } },
+        include: { mlModel: true },
+        orderBy: { asOf: "desc" },
+        take: 12,
+      },
       stock: {
         include: {
           sector: true,

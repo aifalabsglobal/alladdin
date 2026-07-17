@@ -1,7 +1,9 @@
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { AppShell } from "@/components/AppShell";
+import { isClerkEnabled } from "@/lib/auth";
 
 import "./globals.css";
 
@@ -26,10 +28,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const authEnabled = isClerkEnabled();
+  const shell = <AppShell authEnabled={authEnabled}>{children}</AppShell>;
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <AppShell>{children}</AppShell>
+        {authEnabled ? <ClerkProvider>{shell}</ClerkProvider> : shell}
       </body>
     </html>
   );

@@ -17,14 +17,15 @@ async function handle(request: Request) {
   });
   try {
     const summary = await ingestGlobalQuotes();
+    const allFailed =
+      summary.attemptedProviders > 0 &&
+      summary.failedProviders === summary.attemptedProviders;
     await prisma.ingestionRun.update({
       where: { id: run.id },
       data: {
-        status: summary.failedProviders === 2 ? "FAILED" : "OK",
+        status: allFailed ? "FAILED" : "OK",
         finishedAt: new Date(),
-        rowsUpserted:
-          (summary.crypto.status === "ok" ? summary.crypto.result.upserted : 0) +
-          (summary.fx.status === "ok" ? summary.fx.result.upserted : 0),
+        rowsUpserted: summary.rowsUpserted,
         metadata: summary,
       },
     });

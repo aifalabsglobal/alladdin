@@ -1,0 +1,2 @@
+-- AddEnumValue
+ALTER TYPE "MlKind" ADD VALUE IF NOT EXISTS 'LOGISTIC';

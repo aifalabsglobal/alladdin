@@ -13,8 +13,16 @@
       "schedule": "0 13 * * 1-5"
     },
     {
+      "path": "/api/jobs/predict-global",
+      "schedule": "30 13 * * 1-5"
+    },
+    {
       "path": "/api/jobs/label-outcomes",
       "schedule": "15 13 * * 1-5"
+    },
+    {
+      "path": "/api/jobs/train-shadow",
+      "schedule": "45 13 * * 1-5"
     },
     {
       "path": "/api/jobs/ingest-intraday",

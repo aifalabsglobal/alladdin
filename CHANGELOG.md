@@ -1,5 +1,70 @@
 # Changelog
 
+## Phase 7 — Global predictions, calibration, trained shadow, providers & auth (2026-07-17)
+
+### Global instrument predictions
+
+- Added additive `InstrumentPrediction` model (migration `add_instrument_prediction`)
+  keyed by instrument/date/horizon/model, leaving the equity `Prediction` path
+  untouched.
+- `src/lib/prediction/instrumentEngine.ts` scores active instruments with >= 30
+  D1 bars across all six horizons using the existing ensemble; intraday horizons
+  only run where matching `InstrumentBar` intervals exist.
+- `src/lib/prediction/labelInstrumentOutcomes.ts` matures instrument predictions
+  from the first observed bar at/after `targetAt`, across every asset class.
+- Routes: `GET/POST /api/jobs/predict-global`; `/api/jobs/label-outcomes` now
+  matures both equity and instrument predictions. Cron added for predict-global.
+- Asset detail now prefers instrument-native signals and falls back to linked
+  equity signals.
+
+### Calibration & model trust surface
+
+- `src/lib/queries/calibration.ts` computes matured-outcome accuracy and
+  three-class Brier by horizon, a reliability histogram, current stand-aside
+  rate with top abstention reasons, and a model bench (ACTIVE vs SHADOW).
+- New `/calibration` page ("Model trust") with route loader and sidebar nav.
+
+### Trained logistic shadow model
+
+- `src/lib/prediction/logistic.ts` (+ tests): dependency-free standardized
+  logistic regression with L2 and gradient descent; deterministic.
+- `src/lib/prediction/shadowModel.ts` trains on matured D1 predictions with a
+  seeded 70/30 holdout, evaluates test accuracy vs a majority-class baseline and
+  Brier, and registers a `logistic_shadow` SHADOW model (`MlKind.LOGISTIC`,
+  added via `db push`). It never drives live signals.
+- Route `GET/POST /api/jobs/train-shadow` with a weekday cron.
+
+### Operational alerts
+
+- `src/lib/queries/alerts.ts` derives alerts from ingestion failures, provider
+  budget failures, volatility-regime stress (VIX), single-session index shocks,
+  and stand-aside dominance. Surfaced via `AlertsPanel` on the dashboard.
+
+### Free-first providers (config-gated)
+
+- `src/lib/market/providers/twelveData.ts` and `alphaVantage.ts` mirror the
+  CoinGecko/Frankfurter pattern, inert without their API keys, budget-aware, and
+  wired into `ingestGlobal` (provider-count-agnostic route aggregation). Alpha
+  Vantage seed mappings added for AAPL/SPY.
+
+### Clerk authentication & personal watchlists (config-gated)
+
+- `src/lib/auth.ts`, gated `src/middleware.ts`, gated `ClerkProvider` in the
+  layout, `AuthControls`, and `/sign-in`, `/sign-up` routes. All inert unless
+  both Clerk keys are set; the app falls back to the labeled demo watchlist.
+- `src/lib/queries/userWatchlist.ts` + `src/app/watchlist/actions.ts` back a
+  per-user watchlist (add/remove) on the existing `Watchlist`/`WatchlistItem`
+  models using the Clerk user id.
+
+### Verification
+
+- Strict typecheck, ESLint, 69/69 unit tests, and production build passed.
+- Smoke: `/calibration`, `/watchlist`, `/dashboard`, `/assets` returned 200;
+  `predict-global`, `train-shadow`, `label-outcomes`, and `ingest-global` jobs
+  ran successfully. Labeling matured 200 D1 outcomes; the shadow model trained
+  (test accuracy 0.783 vs 0.783 majority baseline, Brier 0.177) — honestly not
+  yet beating baseline, so it stays SHADOW.
+
 ## Phase 1 — Scaffold + Schema + Seed (2026-07-17)
 
 ### Created

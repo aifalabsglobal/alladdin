@@ -133,6 +133,13 @@ const twelve = (symbol: string) => ({
   displayAllowed: false,
 });
 
+const alpha = (symbol: string) => ({
+  provider: "ALPHA_VANTAGE",
+  symbol,
+  capabilities: ["QUOTE"],
+  displayAllowed: false,
+});
+
 export const GLOBAL_INSTRUMENTS: SeedInstrument[] = [
   {
     symbol: "AAPL",
@@ -141,7 +148,7 @@ export const GLOBAL_INSTRUMENTS: SeedInstrument[] = [
     venueCode: "XNAS",
     quoteCurrency: "USD",
     tier: "HOT",
-    providers: [yahoo("AAPL"), twelve("AAPL")],
+    providers: [yahoo("AAPL"), twelve("AAPL"), alpha("AAPL")],
   },
   {
     symbol: "MSFT",
@@ -213,7 +220,7 @@ export const GLOBAL_INSTRUMENTS: SeedInstrument[] = [
     venueCode: "ARCX",
     quoteCurrency: "USD",
     tier: "HOT",
-    providers: [yahoo("SPY"), twelve("SPY")],
+    providers: [yahoo("SPY"), twelve("SPY"), alpha("SPY")],
   },
   {
     symbol: "QQQ",

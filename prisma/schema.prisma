@@ -100,6 +100,7 @@ enum MlKind {
   LSTM
   GBM
   ENSEMBLE
+  LOGISTIC
 }
 
 enum MlStatus {
@@ -160,13 +161,14 @@ model Instrument {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
-  venue            Venue?               @relation(fields: [venueId], references: [id])
-  underlying       Instrument?          @relation("InstrumentUnderlying", fields: [underlyingId], references: [id])
-  derivatives      Instrument[]         @relation("InstrumentUnderlying")
+  venue            Venue?                 @relation(fields: [venueId], references: [id])
+  underlying       Instrument?            @relation("InstrumentUnderlying", fields: [underlyingId], references: [id])
+  derivatives      Instrument[]           @relation("InstrumentUnderlying")
   stock            Stock?
   providerMappings ProviderInstrument[]
   bars             InstrumentBar[]
   quotes           InstrumentQuote[]
+  predictions      InstrumentPrediction[]
 
   @@unique([venueId, symbol])
   @@index([assetClass, tier])
@@ -475,7 +477,8 @@ model MlModel {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  predictions Prediction[]
+  predictions           Prediction[]
+  instrumentPredictions InstrumentPrediction[]
 
   @@unique([key, version])
   @@index([status])
@@ -515,6 +518,45 @@ model Prediction {
 
   @@unique([stockId, date, horizon, mlModelId])
   @@index([stockId])
+  @@index([date])
+  @@index([asOf])
+  @@index([mlModelId])
+  @@index([horizon])
+  @@index([runId])
+}
+
+model InstrumentPrediction {
+  id               String            @id @default(cuid())
+  instrumentId     String
+  date             DateTime          @db.Date
+  asOf             DateTime          @default(now())
+  targetAt         DateTime?
+  horizon          PredictionHorizon
+  direction        Direction
+  confidence       Float
+  probUp           Float?
+  probSideways     Float?
+  probDown         Float?
+  expectedReturn   Float?
+  returnLow        Float?
+  returnHigh       Float?
+  uncertainty      Float?
+  runId            String?
+  calibrated       Boolean           @default(false)
+  insufficientData Boolean           @default(false)
+  mlModelId        String
+  features         Json
+  outcome          Direction?
+  correct          Boolean?
+  realizedReturn   Float?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  instrument Instrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  mlModel    MlModel    @relation(fields: [mlModelId], references: [id], onDelete: Cascade)
+
+  @@unique([instrumentId, date, horizon, mlModelId])
+  @@index([instrumentId])
   @@index([date])
   @@index([asOf])
   @@index([mlModelId])

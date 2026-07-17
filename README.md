@@ -34,6 +34,17 @@ Implemented:
 - Stable asset IDs with venue, MIC, currency, timezone and provider mappings
 - Global asset search that disambiguates symbol, venue and asset class
 - Quota-aware CoinGecko and Frankfurter ingestion with `Degraded` states
+- Config-gated Twelve Data and Alpha Vantage adapters (inert without keys)
+- Global instrument-level multi-horizon predictions and outcome labeling
+  (`InstrumentPrediction`), independent of the equity path
+- Model trust / calibration page: accuracy and three-class Brier by horizon,
+  reliability histogram, stand-aside rate, and an ACTIVE-vs-SHADOW model bench
+- Trained logistic shadow model evaluated on a holdout vs a majority baseline,
+  registered as SHADOW and never used for live signals
+- Operational alerts for ingestion failures, degraded providers, volatility
+  regime stress, index shocks, and stand-aside dominance
+- Config-gated Clerk auth with per-user watchlists (add/remove); falls back to
+  the labeled demo watchlist when Clerk keys are absent
 - Decision support that defaults to `Stand aside` on stale, uncalibrated,
   conflicted, thin-sample, or non-positive after-cost outputs
 
@@ -43,8 +54,10 @@ Important limitations:
   public NSE/BSE redistribution. The UI labels it accordingly.
 - The current ensemble combines explainable rules with a shadow nonlinear model;
   it is not represented as a production-trained trading model.
-- Authentication middleware and user-managed watchlists remain disabled until
-  valid Clerk credentials and product access rules are configured.
+- Authentication and per-user watchlists activate only when both Clerk keys are
+  configured; otherwise the app runs unauthenticated with the labeled demo.
+- The trained logistic model is a SHADOW benchmark only and is not promoted to
+  live signals until it beats the active ensemble and its baseline out of sample.
 - This is not true HFT. It has no colocation, licensed L2 feed, broker
   connectivity, or live order execution. No AI can guarantee profitable trades.
 
@@ -200,13 +213,19 @@ Open [http://localhost:3000](http://localhost:3000).
 | `CRON_SECRET` | No | Reserved for protecting scheduled-job endpoints |
 | `CLERK_SECRET_KEY` | No | Clerk server credential |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | No | Clerk browser credential |
-| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | No | Planned sign-in route |
-| `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | No | Planned sign-up route |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | No | Sign-in route (default `/sign-in`) |
+| `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | No | Sign-up route (default `/sign-up`) |
+| `TWELVE_DATA_API_KEY` | No | Enables the Twelve Data quote adapter |
+| `ALPHA_VANTAGE_API_KEY` | No | Enables the Alpha Vantage fallback adapter |
 | `NODE_ENV` | No | `development`, `test`, or `production` |
 
 Server variables are lazily validated with Zod in `src/lib/env.ts`.
-Authentication is not currently active: `src/middleware.ts` is a passthrough
-middleware even when Clerk keys are present.
+Authentication is config-gated: when both `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+and `CLERK_SECRET_KEY` are set, `src/middleware.ts` enables Clerk, the layout
+wraps the app in `ClerkProvider`, a sign-in control appears, and the watchlist
+becomes per-user. Without both keys the app runs unauthenticated with the
+labeled demo watchlist. Twelve Data and Alpha Vantage adapters are likewise
+inert until their keys are provided.
 
 ## Data truth and freshness
 
@@ -229,10 +248,12 @@ for manual operations:
 
 - `/api/jobs/ingest-eod` — official/delayed EOD adapters
 - `/api/jobs/score` — deterministic health-score pass
-- `/api/jobs/predict` — multi-horizon ensemble inference
-- `/api/jobs/label-outcomes` — mature outcomes and refresh model accuracy
+- `/api/jobs/predict` — multi-horizon ensemble inference (equities)
+- `/api/jobs/predict-global` — multi-horizon inference over the instrument master
+- `/api/jobs/label-outcomes` — mature equity and instrument outcomes, refresh metrics
+- `/api/jobs/train-shadow` — train and holdout-evaluate the logistic shadow model
 - `/api/jobs/ingest-intraday` — bounded Yahoo prototype candle ingestion
-- `/api/jobs/ingest-global` — quota-aware CoinGecko crypto and reference FX
+- `/api/jobs/ingest-global` — quota-aware CoinGecko, reference FX, and keyed providers
 
 All job routes require `Authorization: Bearer <CRON_SECRET>` or the
 `x-cron-secret` header. Vercel Hobby cron timing is limited; frequent intraday

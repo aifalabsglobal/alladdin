@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { isAuthorizedCronRequest } from "@/lib/cron";
+import { labelInstrumentOutcomes } from "@/lib/prediction/labelInstrumentOutcomes";
 import { labelPredictionOutcomes } from "@/lib/prediction/labelOutcomes";
 
 export const maxDuration = 300;
@@ -13,10 +14,12 @@ async function handle(request: Request) {
 
   const url = new URL(request.url);
   const limit = Number(url.searchParams.get("limit") ?? "2000");
-  const summary = await labelPredictionOutcomes(
-    Number.isFinite(limit) ? limit : 2000,
-  );
-  return NextResponse.json(summary);
+  const safeLimit = Number.isFinite(limit) ? limit : 2000;
+  const [equity, instruments] = await Promise.all([
+    labelPredictionOutcomes(safeLimit),
+    labelInstrumentOutcomes(safeLimit),
+  ]);
+  return NextResponse.json({ equity, instruments });
 }
 
 export async function GET(request: Request) {

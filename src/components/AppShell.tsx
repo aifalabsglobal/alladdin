@@ -12,6 +12,7 @@ import {
 } from "react";
 
 import { GlobalAssetSearch } from "@/components/assets/GlobalAssetSearch";
+import { AuthControls } from "@/components/AuthControls";
 import { Disclaimer } from "@/components/Disclaimer";
 import { LiveMarketProvider } from "@/components/live/LiveMarketProvider";
 import { TickerTape } from "@/components/TickerTape";
@@ -24,6 +25,7 @@ const nav = [
   { href: "/sectors", label: "Equity sectors", icon: "▦" },
   { href: "/watchlist", label: "Watchlist", icon: "☆" },
   { href: "/influencers", label: "Factors", icon: "⇄" },
+  { href: "/calibration", label: "Model trust", icon: "◎" },
 ];
 
 function Brand() {
@@ -81,7 +83,13 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({
+  children,
+  authEnabled = false,
+}: {
+  children: ReactNode;
+  authEnabled?: boolean;
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuId = useId();
   const closeBtnRef = useRef<HTMLButtonElement>(null);
@@ -154,6 +162,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="flex flex-wrap items-center gap-3 border-b border-line bg-surface/80 px-4 py-2 sm:px-6 lg:px-8">
             <GlobalAssetSearch />
             <MarketStatus />
+            {authEnabled ? (
+              <div className="ml-auto">
+                <AuthControls />
+              </div>
+            ) : null}
           </div>
           <main
             id="main-content"
